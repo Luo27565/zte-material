@@ -2,101 +2,115 @@
   <el-drawer :title="title" @open="init" :visible="drawer" :modal-append-to-body="false" :append-to-body="true"
              :with-header="withHeader"
              :destroy-on-close="destroyOnClose"
-             :direction="direction" :size="size">
+             :direction="direction" :size="size" class="detail-wrap">
     <div class="drawer-top">
-      <div class="top-btn">
-        <div v-permission="assetRole" class="btn" style="margin-right: 24px" v-for="item in topBtn" :key="item.icon"
-             v-show="item.show"
-             @click="handleBtn(item.icon)">
-          <i :class="item.icon"/>
-          {{ item.label }}
+      <div class="drawer-top-cnt">
+        <div class="top-btn">
+          <div v-permission="assetRole" class="btn" :class="item.className" v-for="item in topBtn" :key="item.icon"
+               v-show="item.show"
+               @click="handleBtn(item.icon)">
+            <i :class="item.icon"/>
+            {{ item.label }}
+          </div>
+        </div>
+        <div class="btn detail-close" @click="closeDrawer">
+          关闭
         </div>
       </div>
-      <div class="btn" @click="closeDrawer">
-        关闭
-      </div>
     </div>
-    <div class="info-item">
-      <div class="info-title">
-        {{ detailData.showName }}
-      </div>
-      <div class="info-last">
-        <i class="el-icon-arrow-left" @click="handleChange('sub')" v-show="index!==1"/>
-        {{ index }} 个/共 {{ total }} 个资产
-        <i class="el-icon-arrow-right" @click="handleChange('add')" v-show="index!==total"/>
-      </div>
-    </div>
-    <div class="info-content">
-      <div class="info-img">
-        <template v-if="detailData.type==='video/mp4'||detailData.type==='audio/mpeg'">
-          <video-player :options="videoOptions" class="video-player-box" :playsinline="true"></video-player>
-        </template>
-        <template v-else>
-          <el-image v-if="detailData.renditions" :src="`${baseUrl}${detailData.renditions.detail}`" fit="contain">
-            <div slot="error" class="image-slot">
-              <i class="el-icon-document" style="font-size: 120px;color: #323232"></i>
+    <div class="drawer-bottom-wrap">
+      <div class="drawer-bottom">
+        <div class="drawer-bottom-cnt">
+          <div class="info-item">
+            <div class="info-title">
+              {{ detailData.showName }}
             </div>
-          </el-image>
-        </template>
-      </div>
-      <div class="info-list">
-        <p class="info-label">素材获取</p>
-        <div class="info-btn">
-          <template v-if="downLoadBtn">
-            <el-button style="width: 100%" type="primary" @click="handleDownload('original')">下载当前文件</el-button>
-          </template>
-          <template v-else>
-            <el-button type="primary" style="width: 48%" @click="handleDownload('original')">下载当前文件</el-button>
-            <el-button type="primary" style="width: 48%" @click="handleDownload('related')">下载关联文件
-              <!--              <i class="el-icon-arrow-down el-icon&#45;&#45;right"/>-->
-            </el-button>
-          </template>
-        </div>
-        <p class="info-label">基本信息</p>
-        <div class="list-item" v-if="detailData.metadata">
-          <div>
-            <span>ID：</span>
-            {{ detailData.assetId }}
+            <div class="info-last">
+              <div class="prve-btn" @click="handleChange('sub')" :class="index==1?'disable':''">
+                <i class="el-icon-arrow-left"/>
+                上一张
+              </div>
+              <!--          {{ index }} 个/共 {{ total }} 个资产-->
+              <div class="next-btn" @click="handleChange('add')" :class="index==total?'disable':''">
+                下一张
+                <i class="el-icon-arrow-right"/>
+              </div>
+            </div>
           </div>
-          <div>
-            <span>名称：</span>
-            {{ detailData.showName }}
-          </div>
-          <div v-show="detailData.metadata['tiff:ImageWidth']">
-            <span>尺寸：</span>
-            {{ `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}` }}
-          </div>
-          <div>
-            <span>存储大小：</span>
-            {{ detailData.metadata['dam:size'] | formatSize }}
-          </div>
-          <div>
-            <span>授权范围：</span>
-            {{ detailData.metadata['dc:authorizationScope'] | formatAuthorizationScope }}
-          </div>
-          <div>
-            <span>版权到期时间：</span>
-            {{ detailData.metadata['prism:expirationDate'] }}
-          </div>
-          <div>
-            <span>来源：</span>
-            {{ detailData.metadata['dc:source'] | formatSource }}
-          </div>
-          <div>
-            <span>创建时间：</span>
-            {{ detailData.metadata['dam:extracted'] | formatDate }}
-          </div>
-          <div>
-            <span>最后修改时间：</span>
-            {{ detailData.properties['jcr:lastModified'] | formatDate }}
-          </div>
-          <div>
-            <span>描述：</span>
-            {{ detailData.metadata['dc:description'] }}
-          </div>
-          <div>
-            <span>标签：</span>
-            {{ showTag(detailData.metadata['cq:tags']) }}
+          <div class="info-content">
+            <div class="info-img">
+              <template v-if="detailData.type==='video/mp4'||detailData.type==='audio/mpeg'">
+                <video-player :options="videoOptions" class="video-player-box" :playsinline="true"></video-player>
+              </template>
+              <template v-else>
+                <el-image v-if="detailData.renditions" :src="`${baseUrl}${detailData.renditions.detail}`" fit="contain">
+                  <div slot="error" class="image-slot">
+                    <i class="el-icon-document" style="font-size: 120px;color: #323232"></i>
+                  </div>
+                </el-image>
+              </template>
+            </div>
+            <div class="info-list">
+              <!--            <p class="info-label">基本信息</p>-->
+              <div class="list-item" v-if="detailData.metadata">
+                <!--              <div>-->
+                <!--                <span>ID：</span>-->
+                <!--                {{ detailData.assetId }}-->
+                <!--              </div>-->
+                <div class="info-btn">
+                  <template v-if="downLoadBtn">
+                    <el-button style="width: 100%" type="primary" @click="handleDownload('original')">下载当前图片</el-button>
+                  </template>
+                  <template v-else>
+                    <el-button type="primary" style="width: 48%" @click="handleDownload('original')">下载当前图片</el-button>
+                    <el-button type="primary" style="width: 48%" @click="handleDownload('related')" class="associated-download">下载关联文件
+                      <!--              <i class="el-icon-arrow-down el-icon&#45;&#45;right"/>-->
+                    </el-button>
+                  </template>
+                </div>
+                <div class="info-list-label">
+                  <!--                <span>标签：</span>-->
+                  <!--                {{ showTag(detailData.metadata['cq:tags']) }}-->
+                  <ul >
+                    <li v-for="(item, index) in showTag(detailData.metadata['cq:tags'])" :key="index"><span>{{ item }}</span></li>
+                  </ul>
+                </div>
+                <div class="item-ul">
+                  <div class="item-li" v-show="detailData.metadata['tiff:ImageWidth']">
+                    <span class="item-li-title">尺寸：</span>
+                    <span>{{ `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}` }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">存储大小：</span>
+                    <span>{{ detailData.metadata['dam:size'] | formatSize }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">授权范围：</span>
+                    <span>{{ detailData.metadata['dc:authorizationScope'] | formatAuthorizationScope }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">版权时间：</span>
+                    <span>{{ detailData.metadata['prism:expirationDate'] }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">版权来源：</span>
+                    <span>{{ detailData.metadata['dc:source'] | formatSource }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">创建时间：</span>
+                    <span>{{ detailData.metadata['dam:extracted'] | formatDate }}</span>
+                  </div>
+                  <div class="item-li">
+                    <span class="item-li-title">最后修改时间：</span>
+                    <span>{{ detailData.properties['jcr:lastModified'] | formatDate }}</span>
+                  </div>
+                  <div class="item-li dec-wrap">
+                    <span class="item-li-title">描述：</span>
+                    <span>{{ detailData.metadata['dc:description'] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -196,7 +210,7 @@ export default {
     },
     showTag: function () {
       const tags = { ...this.tags }
-      return tag => tag ? tag.split(';').map(e => tags[e] || e).join(';') : ''
+      return tag => tag ? tag.split(';').map(e => tags[e] || e) : ''
     }
   },
   data () {
@@ -209,23 +223,28 @@ export default {
       topBtn: [
         {
           icon: 'el-icon-edit',
+          className: 'top-edit',
           show: false,
           label: '编辑'
         }, {
           icon: 'el-icon-info',
+          className: 'top-attribute',
           show: true,
           label: '属性'
         }, {
           icon: 'el-icon-position',
+          className: 'top-move',
           show: true,
           label: '移动'
         }, {
           icon: 'el-icon-paperclip',
+          className: 'top-paperclip',
           show: false,
           label: '相关'
         }, {
           icon: 'el-icon-scissors',
-          show: true,
+          className: 'top-scissors',
+          show: false,
           label: '取消关联'
         }
       ],
@@ -354,149 +373,377 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drawer-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4375rem 1rem;
-  border-bottom: 0.0625rem solid #E1E1E1;
-  height: 3.25rem;
-  background-color: rgb(250, 250, 250);
+.detail-wrap {
+  top: 64px;
+  height: 100%;
+  background: #F7F8FA;
 
-  .top-btn {
-    display: flex;
-  }
-
-  .btn {
-    display: inline-block;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    min-width: 2.375rem;
-    height: 2.375rem;
-    margin: 0;
-    padding: .625rem;
-    vertical-align: top;
-    border-radius: .25rem;
-    border-color: #d0d0d0;
-    background-color: #fafafa;
-    font-family: adobe-clean, Helvetica, Arial, sans-serif;
-    font-weight: 700;
-    font-style: normal;
-    color: #6d6d6d;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-smoothing: antialiased;
-    font-size: .9375rem;
-    text-decoration: none;
-    text-align: center;
-    line-height: 1rem;
-    cursor: pointer;
-    white-space: nowrap;
-
-    i {
-      margin-right: 4px;
-      font-size: 18px;
-    }
-  }
-
-  .btn:hover {
-    background-color: transparent;
-    color: #323232;
-    text-decoration: none;
-  }
-}
-
-.info-item {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 0.0625rem solid #E1E1E1;
-  height: 3rem;
-  background-color: #F0F0F0;
-  position: relative;
-
-  .info-title {
-    order: 2;
-    flex: 0 1 auto; /* Allow the title area to shrink */
+  /deep/ .el-drawer__body {
     overflow: hidden;
-    color: rgb(109, 109, 109);
-    font-size: 1.125rem;
-    font-weight: bold;
+    background: #F7F8FA;
   }
 
-  .info-last {
-    position: absolute;
-    right: 1rem;
-    color: rgb(109, 109, 109);
-
-    i {
-      cursor: pointer;
-      font-size: 18px;
-    }
-
-    i:hover {
-      color: #323232;
-    }
-  }
-}
-
-.info-content {
-  height: calc(100vh - 3.25rem - 3rem);
-  display: flex;
-  overflow: hidden;
-
-  .info-img {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 2rem;
-
-    /deep/ .el-image {
-      width: 100%;
-      height: 100%;
-    }
-
-    /deep/ .image-slot {
+  .drawer-top {
+    background-color:#ffffff;
+    border-bottom: 1px solid #D8D8D8;
+    .drawer-top-cnt {
       display: flex;
       align-items: center;
-      justify-content: center;
-      height: 100%;
+      justify-content: space-between;
+      padding: 0 40px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      width: 1314px;
+      max-width: 100%;
+      margin: 0 auto;
+      height: 64px;
     }
 
-    .video-player-box {
-      display: block;
-      width: 80%;
-      height: auto;
+    .top-btn {
+      display: flex;
+      .btn {
+        display: inline-block;
+        height: 32px;
+        border-radius: 16px;
+        line-height: 32px;
+        padding: 0 12px 0 36px;
+        cursor: pointer;
+        position: relative;
+        -webkit-transition: .3s ease-out;
+        transition: .3s ease-out;
+        margin-right: 12px!important;
+        font-size: 16px;
+        color: #222222;
+
+        &:hover {
+          background: #ECFAFF;
+        }
+
+        i {
+          display: inline-block;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+
+          &:before {
+            display: none;
+          }
+        }
+
+        &.top-attribute {
+          i{
+            width: 30px;
+            height: 27px;
+            left: 6px;
+            background: url("../../assets/home/attribute.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-move {
+          i{
+            width: 28px;
+            height: 26px;
+            left: 7px;
+            background: url("../../assets/home/move.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-paperclip {
+          i{
+            width: 27px;
+            height: 25px;
+            left: 7px;
+            background: url("../../assets/home/association.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-scissors {
+          display: none;
+          i{
+            width: 26px;
+            height: 25px;
+            left: 7px;
+            background: url("../../assets/home/scissors.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+      }
+    }
+
+    .detail-close {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 16px;
+      opacity: 1;
+      border: 1px solid #999999;
+      padding: 0 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #666666;
+      min-width: 80px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      -webkit-transition: .3s ease-out;
+      transition: .3s ease-out;
+      cursor: pointer;
+      &:hover {
+        background: #ECFAFF;
+        color: #000000;
+        border-color: #ECFAFF;
+      }
     }
   }
-
-  .info-list {
-    width: 20rem;
-    padding: 1rem 1rem 1rem 0;
-    color: #323232;
-    font-size: 14px;
-
-    .info-label {
-      font-weight: bold;
+  .drawer-bottom-wrap {
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 6px;
     }
 
-    .info-btn {
-      display: flex;
-      width: 100%;
-      justify-content: space-between;
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 5px;
     }
+    .drawer-bottom {
+      width: 1314px;
+      max-width: 100%;
+      margin: 42px auto 0;
+      padding: 0 40px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
 
-    .list-item {
-      line-height: 1.8rem;
-      font-size: 14px;
+      .drawer-bottom-cnt {
+        background: #ffffff;
+        border-radius: 32px 32px 0 0;
+        overflow: hidden;
+        padding: 2.2917vw 1.6667vw 2.2917vw 2.8125vw;
+      }
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
 
-      span {
-        font-weight: bold;
+        .info-title {
+          flex: 1;
+          font-size: 24px;
+          line-height: 28px;
+          color: #3D3D3D;
+          font-weight: 700;
+        }
+
+        .info-last {
+          display: flex;
+          align-items: center;
+
+          .prve-btn {
+            font-size: 14px;
+            color: #008ED3;
+            line-height: 20px;
+            padding-left: 20px;
+            position: relative;
+            cursor: pointer;
+            margin-right: 48px;
+
+            .el-icon-arrow-left {
+              position: absolute;
+              top: 50%;
+              left: 0;
+              font-size: 14px;
+              transform: translateY(-50%);
+            }
+
+            &.disable {
+              color: #666666;
+              cursor: default;
+              pointer-events:none;
+            }
+          }
+
+          .next-btn {
+            font-size: 14px;
+            color: #008ED3;
+            line-height: 20px;
+            padding-right: 20px;
+            position: relative;
+            cursor: pointer;
+            -webkit-transition: .3s ease-out;
+            transition: .3s ease-out;
+
+            .el-icon-arrow-right {
+              position: absolute;
+              top: 50%;
+              right: 0;
+              font-size: 14px;
+              transform: translateY(-50%);
+            }
+
+            &.disable {
+              color: #666666;
+              cursor: default;
+              pointer-events:none;
+            }
+          }
+        }
+      }
+
+      .info-content {
+        min-height: calc(100vh - 234px - 2.2917vw);
+        display: flex;
+        overflow: hidden;
+        padding-top: 36px;
+
+        .info-img {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          box-sizing: border-box;
+          padding-right: 2.2917vw;
+
+          /deep/ .el-image {
+            width: 100%;
+            height: 100%;
+            img {
+              max-height: 500px;
+            }
+          }
+
+          /deep/ .image-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+          }
+
+          .video-player-box {
+            display: block;
+            width: 80%;
+            height: auto;
+          }
+        }
+
+        .info-list {
+          width: 260px;
+          color: #323232;
+          font-size: 14px;
+          display: flex;
+          flex-direction: column;
+
+          .info-label {
+            font-weight: bold;
+          }
+
+          .info-btn {
+            display: flex;
+            align-items: center;
+            margin: 0 -5px;
+            /deep/ .el-button {
+              -webkit-box-flex: 0;
+              -webkit-flex: 0 0 50%;
+              -ms-flex: 0 0 50%;
+              flex: 0 0 50%;
+              max-width: 50%;
+              padding: 0;
+              margin: 0;
+              border: 0;
+              background: transparent;
+              box-sizing: border-box;
+              padding: 0 5px;
+
+              span {
+                display: block;
+                height: 40px;
+                border-radius: 20px;
+                background: #008ED3;
+                font-size: 15px;
+                line-height: 40px;
+                color: #ffffff;
+                box-sizing: border-box;
+              }
+
+              &.associated-download {
+                span {
+                  border: 1px solid #008ED3;
+                  background: #ECFAFF;
+                  color: #222222;
+                }
+              }
+            }
+          }
+
+          .list-item {
+            line-height: 1.8rem;
+            font-size: 14px;
+            .info-list-title {
+              font-size: 24px;
+              font-weight: 500;
+              color: #3D3D3D;
+              line-height: 28px;
+            }
+
+            .info-list-label {
+              ul {
+                margin: 0;
+                padding: 20px 0 0;
+                list-style: none;
+                &:empty {
+                  display: none;
+                }
+                li {
+                  display: inline-block;
+                  padding: 4px 12px 4px 0;
+                  span {
+                    display: inline-block;
+                    height: 28px;
+                    line-height: 28px;
+                    background: #F2F3F5;
+                    border-radius: 2px;
+                    opacity: 1;
+                    border: 1px solid #F2F3F5;
+                    padding: 0 8px;
+                    font-size: 14px;
+                    color: #444444;
+                    font-weight: 400;
+                  }
+                }
+              }
+            }
+
+            .item-ul {
+              padding-top: 24px;
+              .item-li {
+                display: flex;
+                line-height: 0;
+                margin-bottom: 24px;
+                &:last-child {
+                  margin-bottom: 0;
+                }
+                &.dec-wrap {
+                  align-items: center;
+                }
+                span {
+                  font-size: 14px;
+                  line-height: 20px;
+                  color: #444444;
+                }
+                .item-li-title {
+                  -webkit-box-flex: 100px;
+                  -webkit-flex: 0 0 100px;
+                  -ms-flex: 0 0 100px;
+                  flex: 0 0 100px;
+                  max-width: 100px;
+                  font-size: 14px;
+                  font-weight: 700;
+                  color: #999999;
+                  line-height: 20px;
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -506,5 +753,23 @@ export default {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+}
+
+.el-dialog__wrapper {
+  z-index: 2222!important;
+  overflow: hidden;
+  background: rgba(0,0,0,0.5);
+
+  /deep/ .el-dialog__body {
+    .content {
+      height: calc(83vh - 6.25rem);
+
+      .first-column {
+        display: flex;
+        align-items: center;
+        line-height: 0;
+      }
+    }
+  }
 }
 </style>

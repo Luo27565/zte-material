@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken } from '@/api/api'
 import { baseUrl } from '@/utils'
 
-document.cookie = 'login-token=28314397-c981-410f-9d33-3959f006cd8d%3a3ccfb8a0-20be-4db5-abb4-0fb4e2f0d473_c6245eef7354fe30b2647f5d37ba1985%3acrx.default;path=/'
+// document.cookie = 'login-token=28314397-c981-410f-9d33-3959f006cd8d%3a72b81f4e-0872-4d8a-80b4-93c3dcd757cc_cf7709c38a4ca81c499dc3c06e5a8635%3acrx.default;path=/'
 const service = axios.create({
   baseURL: baseUrl,
   withCredentials: true,

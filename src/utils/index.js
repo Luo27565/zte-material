@@ -1,5 +1,6 @@
 // baseUrl /aem
-export const baseUrl = '/aem'
+// export const baseUrl = '/aem'
+export const baseUrl = ''
 
 // 素材管理tag的路径
 export const assetManagementUrl = '/content/cq:tags/popular-tags'
@@ -182,24 +183,29 @@ export const authorizationScopeCheckBox = [{
 //  文件类型
 export const fileTypeOptions = [{
   label: '全部',
+  className: 'select-all',
   value: '',
   type: ''
 }, {
-  label: '图像',
+  label: '图片',
+  className: 'select-image',
   value: 'image',
   type: 'image/jpeg;image/gif;image/png;image/pjpeg;image/tiff;image/vnd.adobe.photoshop;image/x-xcf;image/x-bmp;image/vnd.microsoft.icon;image/bmp;image/x-ppm;image/x-pbm;image/pbm;application/postscript;application/vnd.oasis.opendocument.graphics;image/svg+xml;image/x-adobe-dng;image/x-dcraw;image/x-dcraw;image/x-raw-nikon'
 }, {
-  label: '文档',
-  value: 'documentation',
-  type: 'application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;application/pdf;text/html;text/rtf;text/plain;application/vnd.openxmlformats-officedocument.wordprocessingml.document;text/csv;application/vnd.oasis.opendocument.presentation;application/vnd.ms-excel;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.oasis.opendocument.presentation;application/vnd.ms-powerpoint;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/x-indesign;application/postscript;application/pdf;application.vnd.quark.quarkxpress'
+  label: '视频',
+  className: 'select-video',
+  value: 'video',
+  type: 'application/x-dvi;video/x-flv;video/mp4;video/mpeg;video/ogg;video/quicktime;video/x-ms-wmv;application/x-shockwave-flash;application/vnd.adobe.air-application-installer-package+zip'
 }, {
-  label: '多媒体',
-  value: 'multimedia',
-  type: 'audio/x-aac;audio/midi;audio/3gpp;audio/mp3;audio/mp4;audio/mpeg;audio/mpeg;audio/vorbis;audio/vnd.rn-realaudio;audio/x-wav;audio/x-ms-wma;application/x-dvi;video/x-flv;video/mp4;video/mpeg;video/ogg;video/quicktime;video/x-ms-wmv;application/x-shockwave-flash;application/vnd.adobe.air-application-installer-package+zip'
+  label: '音乐',
+  className: 'select-music',
+  value: 'music',
+  type: 'audio/x-aac;audio/midi;audio/3gpp;audio/mp3;audio/mp4;audio/mpeg;audio/mpeg;audio/vorbis;audio/vnd.rn-realaudio;audio/x-wav;audio/x-ms-wma;'
 }, {
-  label: '归档',
-  value: 'pigeonhole',
-  type: 'application/x-tar-gz;application/java-archive;application/x-tar;application/zip;application/x-rar-compressed'
+  label: '字体',
+  className: 'select-font',
+  value: 'font',
+  type: 'application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;application/pdf;text/html;text/rtf;text/plain;application/vnd.openxmlformats-officedocument.wordprocessingml.document;text/csv;application/vnd.oasis.opendocument.presentation;application/vnd.ms-excel;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.oasis.opendocument.presentation;application/vnd.ms-powerpoint;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/x-indesign;application/postscript;application/pdf;application.vnd.quark.quarkxpress;application/x-tar-gz;application/java-archive;application/x-tar;application/zip;application/x-rar-compressed'
 }]
 
 // 图片视频字体音乐

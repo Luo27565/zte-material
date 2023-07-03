@@ -1,11 +1,13 @@
 <template>
   <div class="container">
-    <el-select v-model="select" class="select">
+    <el-select v-model="select" class="select" :popper-append-to-body="false"
+    @change="changeClass" ref="selectName" data-class="select-all">
       <el-option
         v-for="item in selectData"
         :key="item.value"
         :label="item.label"
-        :value="item.value">
+        :value="item.value"
+        :class="item.className">
       </el-option>
     </el-select>
     <el-input v-model="input" placeholder="请输入查询内容" @keyup.enter.native="handleInput" class="input" clearable>
@@ -30,6 +32,11 @@ export default {
     }
   },
   methods: {
+    changeClass (val) {
+      // this.$refs.selectName.$el.classList.remove('image', 'video', 'music', 'font')
+      // this.$refs.selectName.$el.classList.add(val)
+      this.$refs.selectName.$el.setAttribute('data-class', val)
+    },
     handleInput () {
       const { path } = this.$route
       this.$router.push({

@@ -55,6 +55,7 @@ export const searchAssetTree = filePath => get(`/bin/zte/asset/tree?filePath=${f
 export const uploadAsset = formData => post('/bin/zte/asset/upload', formData)
 
 export const uploadUrl = `${baseUrl}/bin/zte/asset/upload`
+
 // 判断相关
 export const checkRelated = item => get(`/libs/dam/gui/content/assets/bulkrelateasset.manageReferences.html?_charset_=utf-8&ck=${new Date().getTime()}&item=${item}`)
 

@@ -1,16 +1,17 @@
 <template>
-  <div class="container">
+  <div class="container home-tab">
+<!--    <div class="home-tab-title">精选推荐</div>-->
     <el-tabs v-model="tab" class="tab" @tab-click="handleTab">
       <el-tab-pane class="tab-pane" v-for="item in tabList" :key="item.key" :label="item.label">
-        <div v-loading="loading" element-loading-text="加载中">
+        <div class="image-ul" v-loading="loading" element-loading-text="加载中">
           <el-empty v-if="contentData&&contentData.length===0" description="暂无数据"
                     image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"></el-empty>
-          <div v-for="(element,index) in contentData" :key="element.id">
+          <div class="image-li" v-for="(element,index) in contentData" :key="element.id">
             <template v-if="element.imgData&&element.imgData.length">
               <div class="desc">
                 <span class="title">{{ element.title }}</span>
                 <span v-if="element.desc">{{ element.desc }}</span>
-                <div @click="handleFolder(element)" class="more-text">更多></div>
+                <div @click="handleFolder(element)" class="more-text">更多</div>
               </div>
               <template v-if="element.imgData">
                 <el-empty v-if="element.imgData.length===0" description="暂无数据"
@@ -307,12 +308,27 @@ export default {
   background: #f2f2f2;
 }
 
-.container {
-  padding: 12px 24px;
+.home-tab {
+  padding: 56px 24px 0;
   position: relative;
+
+  .home-tab-title {
+    font-size: 32px;
+    line-height: 38px;
+    color: #3D3D3D;
+    position: absolute;
+    top: 56px;
+    left: 24px;
+  }
 
   .tab-pane {
     min-height: 400px;
+
+    /deep/ .image-ul {
+      .image-li {
+        padding-bottom: 40px;
+      }
+    }
   }
 
   .download {
@@ -324,12 +340,52 @@ export default {
     width: 100%;
     height: 100%;
 
+    /deep/ .el-tabs__header {
+      //padding-left: 138px;
+      margin-bottom: 1.25vw;
+
+      .el-tabs__nav-wrap {
+        &:after {
+          display: none;
+        }
+
+        .el-tabs__nav {
+          .el-tabs__active-bar {
+            display: none;
+          }
+          .el-tabs__item {
+            font-size: 16px;
+            color: #222222;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 16px;
+            margin: 8px 8px;
+            border-radius: 15px;
+            -webkit-transition: .3s ease-out;
+            transition: .3s ease-out;
+
+            &.is-active {
+              background: #ECFAFF;
+              color: #008ED3;
+            }
+
+            &:nth-child(2) {
+              margin-left: 0;
+            }
+          }
+        }
+      }
+    }
+
+    /deep/ .el-tabs__content {
+      overflow: initial;
+    }
+
     .desc {
-      padding: 24px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-
+      padding-bottom: 1.25vw;
       .title {
         font-weight: bold;
         font-size: 18px;
@@ -338,8 +394,31 @@ export default {
 
       .more-text {
         cursor: pointer;
-        font-size: .8125rem;
-        color: #323232;
+        font-size: 16px;
+        color: #444444;
+        line-height: 18px;
+        //position: absolute;
+        //top: -46px;
+        //right: 0;
+        padding-right: 24px;
+        position: relative;
+
+        &:after {
+          content: '';
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          background: url("../../assets/home/more-arrow.png") no-repeat center;
+          position: absolute;
+          top: 1px;
+          right: 0;
+          -webkit-transition: .3s ease-out;
+          transition: .3s ease-out;
+        }
+
+        &:hover:after {
+          right: -4px;
+        }
       }
 
       .more-text:hover {
@@ -367,31 +446,47 @@ export default {
 
     .image-content {
       display: grid;
-      grid-template-columns: repeat(3, calc(33.33% - 8px));
-      grid-row-gap: 12px;
-      grid-column-gap: 12px;
+      grid-template-columns: repeat(4, calc(25% - 0.9375vw));
+      grid-row-gap: 1.25vw;
+      grid-column-gap: 1.25vw;
+      //grid-template-rows: 12.5vw;
+
+      .img {
+        height: 12.5vw;
+        border-radius: 0.8333vw;
+        overflow: hidden;
+      }
     }
 
     .video-content {
       display: grid;
-      grid-template-columns: repeat(3, calc(33.33% - 8px));
-      grid-row-gap: 12px;
-      grid-column-gap: 12px;
+      grid-template-columns: repeat(4, calc(25% - 0.9375vw));
+      grid-row-gap: 1.25vw;
+      grid-column-gap: 1.25vw;
 
       .video-item {
         position: relative;
+        height: 12.5vw;
+        border-radius: 0.8333vw;
+        overflow: hidden;
+        line-height: 0;
+
+        video {
+          object-fit: fill;
+        }
 
         .video-title {
           position: absolute;
           bottom: 3px;
           left: 0;
           color: #FFFFFF;
-          padding: 12px 24px;
+          padding: 8px 24px;
           display: flex;
           justify-content: space-between;
           width: 100%;
           box-sizing: border-box;
           background: rgba(0, 0, 0, 0.3);
+          line-height: 20px;
         }
       }
     }

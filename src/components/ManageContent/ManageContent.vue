@@ -6,131 +6,140 @@
       </el-breadcrumb-item>
     </el-breadcrumb>
     <div class="manage-container">
-      <div class="search-container">
-        <search class="left-content"/>
-        <div class="right-content">
-          <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog" class="btn">
-            <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
-          </el-button>
-          <el-button v-permission="assetRole" type="primary" size="mini" @click="showUpload=true" class="btn">
-            <div class="button"><i class="el-icon-upload search-icon"/>上传</div>
-          </el-button>
-          <el-button v-permission="assetRole" type="primary" size="mini" class="btn" @click="handleAllSelect">
-            <div class="button"><i class="el-icon-circle-check search-icon"/>全选</div>
-          </el-button>
-          <el-dropdown v-show="showSettingBtn()" :hide-on-click="false" class="btn" style="margin-left: 10px;"
-                       @command="handleSettingCommand">
-            <el-button type="primary" size="mini" class="btn">
-              操作<i class="el-icon-arrow-down el-icon--right"></i>
+      <div class="search-filter-container">
+        <div class="filter-container">
+          <div class="filter-item all-list">
+            <el-select v-model="searchForm.fileType" clearable placeholder="文件类型">
+              <el-option
+                v-for="item in fileTypeSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="filter-item user-list">
+            <el-select v-model="searchForm.portrait" clearable placeholder="人像">
+              <el-option
+                v-for="item in portraitSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+<!--          <div class="filter-item">-->
+<!--            <el-select v-model="searchForm.authorization" clearable placeholder="授权状态">-->
+<!--              <el-option-->
+<!--                v-for="item in authorizationSelect"-->
+<!--                :key="item.value"-->
+<!--                :label="item.label"-->
+<!--                :value="item.value">-->
+<!--              </el-option>-->
+<!--            </el-select>-->
+<!--          </div>-->
+          <div class="filter-item">
+            <el-select v-model="searchForm.source" clearable placeholder="来源">
+              <el-option
+                v-for="item in sourceSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <el-select v-model="searchForm.scopeAuthorization" clearable placeholder="授权范围">
+              <el-option
+                v-for="item in scopeAuthorizationSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <el-popover
+              placement="bottom"
+              trigger="click"
+              @show="showAuthorizationDuration = !showAuthorizationDuration"
+              @hide="showAuthorizationDuration = !showAuthorizationDuration">
+              <el-date-picker
+                v-model="searchForm.durationAuthorization"
+                type="datetimerange"
+                start-placeholder="开始时间"
+                :value-format="dateValueFormat"
+                end-placeholder="结束时间"
+                :default-time="['00:00:00']">
+              </el-date-picker>
+              <div slot="reference" class="update-time">
+                <span>授权期限</span>
+                <i :class="['el-icon-arrow-down','time-icon',{iconTime:showAuthorizationDuration}]"/>
+              </div>
+            </el-popover>
+          </div>
+<!--          <div class="filter-item">-->
+<!--            <el-popover-->
+<!--              placement="bottom"-->
+<!--              trigger="click"-->
+<!--              @show="showUpdateTime = !showUpdateTime"-->
+<!--              @hide="showUpdateTime = !showUpdateTime">-->
+<!--              <el-date-picker-->
+<!--                v-model="searchForm.updateTime"-->
+<!--                type="datetimerange"-->
+<!--                start-placeholder="开始时间"-->
+<!--                end-placeholder="结束时间"-->
+<!--                :default-time="['00:00:00']">-->
+<!--              </el-date-picker>-->
+<!--              <div slot="reference" class="update-time">-->
+<!--                <span>修改时间</span>-->
+<!--                <i :class="['el-icon-arrow-down','time-icon',{iconTime:showUpdateTime}]"/>-->
+<!--              </div>-->
+<!--            </el-popover>-->
+<!--          </div>-->
+        </div>
+        <div class="search-container">
+          <search class="left-content"/>
+          <div class="right-content">
+            <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog" class="btn create-folder">
+              <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
             </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item v-for="item in settingBtn" :key="item.icon" :icon="item.icon" v-show="item.show"
-                                :command="item.icon">
-                {{ item.label }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-          <el-dropdown @command="handleCommand" v-if="false">
-            <i :class="`${dropDownValue} menu-icon`"/>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item v-for="item in dropDownData" :key="item.icon" :icon="item.icon" :command="item.icon"
-                                v-show="item.show"
-                                :class="dropDownValue===item.icon?'showHover':''">
-                {{ item.label }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </div>
-      </div>
-      <div class="filter-container">
-        <div class="filter-item">
-          <el-select v-model="searchForm.fileType" clearable placeholder="文件类型">
-            <el-option
-              v-for="item in fileTypeSelect"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </div>
-        <div class="filter-item">
-          <el-select v-model="searchForm.portrait" clearable placeholder="人像">
-            <el-option
-              v-for="item in portraitSelect"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </div>
-        <div class="filter-item">
-          <el-select v-model="searchForm.authorization" clearable placeholder="授权状态">
-            <el-option
-              v-for="item in authorizationSelect"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </div>
-        <div class="filter-item">
-          <el-select v-model="searchForm.source" clearable placeholder="来源">
-            <el-option
-              v-for="item in sourceSelect"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </div>
-        <div class="filter-item">
-          <el-select v-model="searchForm.scopeAuthorization" clearable placeholder="授权范围">
-            <el-option
-              v-for="item in scopeAuthorizationSelect"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </div>
-        <div class="filter-item" style="padding-right: 12px">
-          <el-popover
-            placement="bottom"
-            trigger="click"
-            @show="showAuthorizationDuration = !showAuthorizationDuration"
-            @hide="showAuthorizationDuration = !showAuthorizationDuration">
-            <el-date-picker
-              v-model="searchForm.durationAuthorization"
-              type="datetimerange"
-              start-placeholder="开始时间"
-              :value-format="dateValueFormat"
-              end-placeholder="结束时间"
-              :default-time="['00:00:00']">
-            </el-date-picker>
-            <div slot="reference" class="update-time">
-              <span>授权期限</span>
-              <i :class="['el-icon-arrow-down','time-icon',{iconTime:showAuthorizationDuration}]"/>
+            <!--          <el-button v-permission="assetRole" type="primary" size="mini" @click="showUpload=true" class="btn">-->
+            <!--            <div class="button"><i class="el-icon-upload search-icon"/>上传</div>-->
+            <!--          </el-button>-->
+            <el-button v-permission="assetRole" type="primary" size="mini" class="btn all-btn" @click="handleAllSelect">
+              <div class="button"><i class="el-icon-circle-check search-icon"/>全选</div>
+            </el-button>
+            <el-dropdown v-show="showSettingBtn()" :hide-on-click="false" class="btn" style="margin-left: 10px;"
+                         @command="handleSettingCommand">
+              <el-button type="primary" size="mini" class="btn operate-btn">
+                操作<i class="el-icon-arrow-down el-icon--right"></i>
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item v-for="item in settingBtn" :key="item.icon" :icon="item.icon" v-show="item.show"
+                                  :command="item.icon">
+                  {{ item.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+            <el-dropdown @command="handleCommand" v-if="false">
+              <i :class="`${dropDownValue} menu-icon`"/>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item v-for="item in dropDownData" :key="item.icon" :icon="item.icon" :command="item.icon"
+                                  v-show="item.show"
+                                  :class="dropDownValue===item.icon?'showHover':''">
+                  {{ item.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+            <div class="upload-wrap" :class="showUploadBox? 'active':''">
+              <div class="upload-title" @click="handleUploadBox">上传</div>
+              <div class="upload-box">
+                <span class="upload-file" @click="showUpload=true,showUploadBox=false">上传文件</span>
+                <span class="upload-folder" @click="showFolderUpload=true, showUploadBox=false">文件夹上传</span>
+              </div>
             </div>
-          </el-popover>
-        </div>
-        <div class="filter-item" style="padding-right: 12px">
-          <el-popover
-            placement="bottom"
-            trigger="click"
-            @show="showUpdateTime = !showUpdateTime"
-            @hide="showUpdateTime = !showUpdateTime">
-            <el-date-picker
-              v-model="searchForm.updateTime"
-              type="datetimerange"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-              :default-time="['00:00:00']">
-            </el-date-picker>
-            <div slot="reference" class="update-time">
-              <span>修改时间</span>
-              <i :class="['el-icon-arrow-down','time-icon',{iconTime:showUpdateTime}]"/>
-            </div>
-          </el-popover>
+          </div>
         </div>
       </div>
       <div class="content">
@@ -278,6 +287,7 @@
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
     <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData"/>
+    <folderUpload :dialog-visible.sync="showFolderUpload" @finish="refresh" :exist-data="listViewData"/>
     <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
                    @move="handleDetailToMove"/>
     <div style="display: none" v-html="errorData"></div>
@@ -289,10 +299,18 @@
 import search from '@/components/Search/Search'
 import drawer from '@/components/Drawer/Drawer'
 import upload from '@/components/Upload/Upload'
+import folderUpload from '@/components/FolderUpload/FolderUpload.vue'
 import detailDrawer from '@/components/DetailDrawer/DetailDrawer'
 import zteStore from '@/store'
 import { mapState, mapActions } from 'pinia'
-import { getTree, command, getJSON, folderTree, searchPopularTag, createFolderByAem } from '@/api/api'
+import {
+  getTree,
+  command,
+  getJSON,
+  folderTree,
+  searchPopularTag,
+  createFolderByAem
+} from '@/api/api'
 import {
   columnPath,
   baseUrl,
@@ -315,7 +333,8 @@ export default {
     search,
     drawer,
     upload,
-    detailDrawer
+    detailDrawer,
+    folderUpload
   },
   computed: {
     ...mapState(zteStore, ['assetRole', 'selected', 'breadcrumb', 'lastCrumb']),
@@ -389,13 +408,16 @@ export default {
       showDrawer: false,
       showDetailDrawer: false,
       showUpload: false,
+      showFolderUpload: false,
       showUpdateTime: false,
+      showUploadBox: false,
       showAuthorizationDuration: false,
       dateValueFormat: 'yyyy-MM-dd HH:mm:ss',
       drawerTitle: 'move',
       drawerSelectData: [],
       detailArr: [],
       detailData: {},
+      dataflole: [],
       selectData: [{
         label: '图片',
         value: 0
@@ -697,6 +719,13 @@ export default {
     refresh () {
       const { id } = this.lastCrumb
       this.initByListView(id)
+    },
+    handleUploadBox () {
+      if (this.showUploadBox === false) {
+        this.showUploadBox = true
+      } else {
+        this.showUploadBox = false
+      }
     }
   }
 }
@@ -707,18 +736,40 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 0 20px;
 
-  .bread-crumb {
-    padding: 12px 0 12px 12px;
-    font-size: 16px;
+  /deep/  .bread-crumb {
+    padding: 24px 10px 20px;
+    font-size: 14px;
+    line-height: 20px;
     color: #222222;
+    border-bottom: 1px solid #E7E7E7;
 
-    /deep/ .el-breadcrumb__inner {
+    &:before {
+      display: none;
+    }
+
+    &:after {
+      display: none;
+    }
+
+    .el-breadcrumb__inner {
       cursor: pointer;
+      color: #999999;
+    }
+
+    .el-icon-arrow-right {
+      color: #979797;
     }
 
     .bread-crumb-item:not(:last-child) :hover {
       color: #409eff;
+    }
+
+    .el-breadcrumb__item:last-child {
+      .el-breadcrumb__inner {
+        color: #222222;
+      }
     }
   }
 
@@ -729,126 +780,331 @@ export default {
     flex-direction: column;
     justify-content: space-between;
 
-    .search-container {
-      box-sizing: border-box;
+    .search-filter-container {
       display: flex;
       justify-content: space-between;
-      width: 100%;
-      padding: 8px 12px 8px 0;
-      border: 1px solid #f3f5f8;
+      align-items: center;
 
-      .left-content {
+      .search-container {
+        box-sizing: border-box;
         display: flex;
-        height: 45px;
-        width: 36%;
-        align-items: center;
+        justify-content: flex-end;
+        padding-left: 20px;
 
-        /deep/ .input {
-          padding-left: 12px;
+        .left-content {
+          display: flex;
+          height: 36px;
+          border-radius: 18px;
+          width: 292px;
+          align-items: center;
+          position: absolute;
+          top: 14px;
+          right: 260px;
+          z-index: 2101;
+          background: #ffffff;
 
-          .el-input__inner {
-            border-top: 1px solid rgb(170, 170, 170);
-            border-left: 1px solid rgb(170, 170, 170);
-            border-bottom: 1px solid rgb(170, 170, 170);
-            border-radius: 6px 0 0 6px;
-            height: 45px;
-            line-height: 45px;
+          /deep/ .input {
+            padding-left: 12px;
+
+            .el-input__inner {
+              border: 0;
+              border-radius: 0;
+              height: 36px;
+              line-height: 36px;
+              padding-left: 0;
+              padding-right: 24px;
+            }
+
+            .el-input__suffix {
+              right: 0;
+              .el-input__clear {
+                font-size: 20px;
+                line-height: 36px;
+              }
+            }
+          }
+
+          /deep/ .button {
+            border-radius: 0 14px 14px 0;
+            height: 28px;
+            background: transparent;
+            border: 0;
+            position: relative;
+            margin-right: 4px;
+            -webkit-transition: .3s ease-out;
+            transition: .3s ease-out;
+
+            .el-icon-search {
+              display: inline-block;
+              width: 24px;
+              height: 24px;
+              background: url("../../assets/home/nav-search.png") no-repeat center;
+              position: absolute;
+              top: 50%;
+              right: 10px;
+              transform: translateY(-50%);
+
+              &:before {
+                display: none;
+              }
+            }
+
+            &:hover {
+              background: #ECFAFF;
+            }
+          }
+
+          /deep/ .select {
+            width: 75px;
+            &:after {
+              content: '';
+              position: absolute;
+              top: 50%;
+              right: 0;
+              height: 16px;
+              width: 1px;
+              background-color: #BABABA;
+              transform: translateY(-50%);
+            }
+            .el-input {
+              height: 100%;
+              .el-input__inner {
+                height: 36px;
+                line-height: 36px;
+                border-radius: 18px 0 0 18px;
+                padding-right: 26px;
+              }
+              .el-input__suffix {
+                height: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                .el-input__icon {
+                  display: inline-block;
+                  width: 20px;
+                  height: 20px;
+                  background: url("../../assets/home/nav-arrow.png") no-repeat center;
+                  transform: none;
+
+                  &.is-reverse {
+                    transform: rotate(180deg);
+                  }
+                  &:before {
+                    display: none;
+                  }
+                  &:after {
+                    display: none;
+                  }
+                }
+              }
+            }
           }
         }
 
-        /deep/ .button {
-          border-radius: 0 6px 6px 0;
-        }
-      }
-
-      .right-content {
-        display: flex;
-        height: 45px;
-        align-items: center;
-
-        .btn {
-          height: 100%;
-        }
-
-        .button {
+        .right-content {
           display: flex;
-          height: 100%;
+          height: 64px;
           align-items: center;
 
-          i {
+          /deep/ .btn {
+            height: 100%;
+            &.create-folder {
+              height: 32px;
+              font-size: 14px;
+              color: #3D3D3D;
+              background: transparent;
+              border-radius: 16px;
+              border: 0;
+              -webkit-transition: .3s ease-out;
+              transition: .3s ease-out;
+
+              &:hover {
+                background: #ECFAFF;
+              }
+
+              .el-icon-folder {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background: url("../../assets/home/holdings.png") no-repeat center;
+                &:before {
+                  display: none;
+                }
+              }
+            }
+            &.all-btn {
+              height: 32px;
+              font-size: 14px;
+              color: #3D3D3D;
+              background: transparent;
+              border-radius: 16px;
+              border: 0;
+              -webkit-transition: .3s ease-out;
+              transition: .3s ease-out;
+              i{
+                font-size: 20px;
+              }
+
+              &:hover {
+                background: #ECFAFF;
+              }
+            }
+          }
+          /deep/ .el-dropdown {
+            height: 32px;
+            .operate-btn {
+              height: 32px;
+              font-size: 14px;
+              color: #3D3D3D;
+              background: transparent;
+              border-radius: 16px;
+              border: 0;
+              -webkit-transition: .3s ease-out;
+              transition: .3s ease-out;
+              i{
+                font-size: 14px;
+                -webkit-transition: .3s ease-out;
+                transition: .3s ease-out;
+              }
+
+              &:hover {
+                background: #ECFAFF;
+                i{
+                  transform: rotate(180deg);
+                }
+              }
+            }
+          }
+
+          .button {
+            display: flex;
+            height: 100%;
+            align-items: center;
+
+            i {
+              font-size: 24px;
+              margin-right: 8px;
+            }
+          }
+
+          .menu-icon {
             font-size: 24px;
-            margin-right: 8px;
+            margin-left: 12px;
+            margin-right: 24px;
+            cursor: pointer;
           }
         }
-
-        .menu-icon {
-          font-size: 24px;
-          margin-left: 12px;
-          margin-right: 24px;
-          cursor: pointer;
-        }
       }
-    }
 
-    .filter-container {
-      display: flex;
-      background-color: rgb(242, 242, 242);
-      padding: 6px 0;
-      flex-wrap: nowrap;
-
-      .filter-item {
-        position: relative;
+      .filter-container {
+        display: flex;
+        flex-wrap: nowrap;
         flex: 1;
+        overflow: hidden;
+        overflow-x: overlay;
+        position: relative;
 
-        .update-time {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          box-sizing: border-box;
-          color: #222222;
-          padding-left: 15px;
-          font-size: 14px;
-          cursor: pointer;
-
-          .time-icon {
-            transition: all .3s;
-          }
-
-          .iconTime {
-            transform: rotate(-180deg);
-          }
-        }
-      }
-
-      .filter-item:not(:last-child):after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 10%;
-        width: 1px;
-        height: 80%;
-        background-color: rgb(121, 121, 121);
-        // border-right: 1px solid rgb(121, 121, 121);
-      }
-
-      .el-select {
-
-        /deep/ .el-input__inner {
-          border: none;
-          background-color: rgb(242, 242, 242);
-          color: #222222;
+        &::-webkit-scrollbar {
+          height: 6px;
         }
 
-        /deep/ .el-input__inner {
-          &::placeholder {
+        &::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 5px;
+        }
+
+        .filter-item {
+          position: relative;
+          -webkit-box-flex: 0;
+          -webkit-flex: 0 0 102px;
+          -ms-flex: 0 0 102px;
+          flex: 0 0 102px;
+          max-width: 102px;
+          margin-right: 8px;
+
+          &.user-list {
+            -webkit-flex: 0 0 76px;
+            -ms-flex: 0 0 76px;
+            flex: 0 0 76px;
+            max-width: 76px;
+          }
+
+          &.all-list {
+            -webkit-flex: 0 0 76px;
+            -ms-flex: 0 0 76px;
+            flex: 0 0 76px;
+            max-width: 76px;
+          }
+
+          .filter-item:last-child {
+            margin-right: 0;
+          }
+
+          &:after {
+            display: none;
+          }
+
+          .update-time {
+            width: 100%;
+            height: 100%;
+            //display: flex;
+            //align-items: center;
+            box-sizing: border-box;
+            color: #222222;
+            padding-left: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            padding-right: 25px;
+            position: relative;
+
+            span {
+              display: block;
+              height: 40px;
+              line-height: 40px;
+              margin-top: -1px;
+            }
+
+            .time-icon {
+              transition: all .3s;
+              position: absolute;
+              top: 50%;
+              right: 5px;
+              transform: translateY(-50%);
+            }
+
+            .iconTime {
+              transform: translateY(-50%) rotate(-180deg);
+            }
+          }
+        }
+
+        .filter-item:not(:last-child):after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 10%;
+          width: 1px;
+          height: 80%;
+          background-color: rgb(121, 121, 121);
+          // border-right: 1px solid rgb(121, 121, 121);
+        }
+
+        .el-select {
+
+          /deep/ .el-input__inner {
+            border: none;
+            color: #222222;
+            padding-right: 25px;
+          }
+
+          /deep/ .el-input__inner {
+            &::placeholder {
+              color: #222222;
+            }
+          }
+
+          /deep/ .el-select__caret {
             color: #222222;
           }
-        }
-
-        /deep/ .el-select__caret {
-          color: #222222;
         }
       }
     }
@@ -860,13 +1116,67 @@ export default {
       .list-view {
         height: 100%;
 
-        /deep/ .el-table__header-wrapper .el-checkbox {
-          display: none;
+        /deep/ .el-table__header-wrapper {
+          .el-checkbox {
+            display: none;
+          }
+          .has-gutter {
+            > tr {
+              background: #F7F8FA;
+              border-radius: 4px;
+              overflow: hidden;
+
+              th.el-table__cell {
+                background: #F7F8FA;
+                border: 0;
+                .cell {
+                  font-size: 16px;
+                  color: #666666;
+                  line-height: 24px;
+                  font-weight: 400;
+                  padding: 0 5px;
+                }
+
+                &:first-child {
+                  border-radius: 4px 0 0 4px;
+                }
+                &:last-child {
+                  border-radius: 0 4px 4px 0;
+                }
+              }
+            }
+          }
         }
 
-        /deep/ .el-table tbody tr:hover > td {
-          cursor: pointer;
-          background-color: rgb(237, 237, 237);
+        /deep/ .el-table__body-wrapper {
+          &::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+          }
+
+          .el-table__body {
+            width: 100%;
+
+            .cell {
+              padding: 0 5px;
+            }
+          }
+        }
+
+        /deep/ .el-table tbody tr {
+          > td {
+            border-color: #E7E7E7;
+          }
+          &:hover {
+            > td {
+              cursor: pointer;
+              background-color: #EFFAFF;
+            }
+          }
         }
 
         /deep/ .el-table .el-table__cell:nth-of-type(2) {
@@ -889,6 +1199,102 @@ export default {
         }
       }
     }
+
+    .upload-wrap {
+      margin-left: 16px;
+      position: relative;
+      overflow: hidden;
+      -webkit-transition: .3s ease-out;
+      transition: .3s ease-out;
+      &.active {
+        overflow: visible;
+        .upload-box {
+          opacity: 1;
+          right: -13px;
+          bottom: -98px;
+        }
+      }
+      .upload-title {
+        font-size: 14px;
+        color: #ffffff;
+        height: 32px;
+        line-height: 32px;
+        background: #008ED3;
+        border-radius: 16px;
+        padding: 0 18px 0 34px;
+        position: relative;
+        cursor: pointer;
+
+        &:before {
+          content: '';
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background: url("../../assets/home/upload.png") no-repeat center;
+          position: absolute;
+          top: 50%;
+          left: 10px;
+          transform: translateY(-50%);
+        }
+      }
+      .upload-box {
+        width: 125px;
+        background: #FFFFFF;
+        box-shadow: 0 6px 24px 0 rgba(0,0,0,0.1148);
+        border-radius: 5px;
+        position: absolute;
+        right: -13px;
+        bottom: -150px;
+        z-index: 10;
+        padding: 8px 0;
+        opacity: 0;
+        -webkit-transition: .3s ease-out;
+        transition: .3s ease-out;
+
+        span {
+          display: block;
+          font-size: 14px;
+          line-height: 20px;
+          padding: 8px 12px 8px 42px;
+          position: relative;
+          color: #444444;
+          -webkit-transition: .3s ease-out;
+          transition: .3s ease-out;
+          -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+          cursor: pointer;
+
+          &.upload-file:before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: url("../../assets/home/file.png") no-repeat center;
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+          }
+
+          &.upload-folder:before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: url("../../assets/home/folder.png") no-repeat center;
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+          }
+
+          &:hover {
+            background: #ECFAFF;
+            color: #000000;
+          }
+        }
+      }
+    }
   }
 
   .showHover {
@@ -907,8 +1313,7 @@ export default {
     line-height: 16px;
   }
 }
-</style>
-<style>
+
 .delete-btn-special {
   background-color: rgb(220, 85, 75) !important;
   border-color: rgb(220, 85, 75) !important;

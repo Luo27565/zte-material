@@ -2,719 +2,420 @@
   <el-drawer :title="title" :visible="drawer" :with-header="withHeader"
              :destroy-on-close="destroyOnClose" :modal-append-to-body="false" :append-to-body="true"
              @open="init"
-             :direction="direction" :size="size" v-loading="loading">
+             :direction="direction" :size="size" v-loading="loading" class="infoDrawer-box">
     <div class="drawer-top">
-      <div class="top-btn" v-if="!isFolder&&!isMultiple">
-        <div class="btn" style="margin-right: 24px" v-for="item in topBtn" :key="item.icon" v-show="item.show"
-             @click="handleBtn(item.icon)">
-          <i :class="item.icon"/>
-          {{ item.label }}
+      <div class="drawer-top-cnt">
+        <div class="top-btn" v-if="!isFolder&&!isMultiple">
+          <div class="btn" :class="item.className" v-for="item in topBtn" :key="item.icon" v-show="item.show"
+               @click="handleBtn(item.icon)">
+            <i :class="item.icon"/>
+            {{ item.label }}
+          </div>
         </div>
-      </div>
-      <div v-else></div>
-      <div style="display: flex;align-items: center">
-        <div class="btn" @click="closeDrawer('close')">
-          取消
+        <div v-else></div>
+        <div style="display: flex;align-items: center">
+          <div class="btn detail-close" @click="closeDrawer('close')">
+            取消
+          </div>
+          <div class="btn detail-save" @click="closeDrawer('saveAndClose')">
+            保存
+          </div>
         </div>
-        <el-dropdown size="medium" split-button type="primary" @click="closeDrawer('saveAndClose')"
-                     @command="closeDrawer">
-          保存并关闭
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item command="save">保存</el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
       </div>
     </div>
-    <div class="info-item">
-      <template v-if="!isFolder">
-        <div class="info-title" v-if="detailData.metadata">
-          {{ detailData.metadata['dc:title'] || name }}
-        </div>
-        <div class="info-title" v-else>
-          {{ name }}
-        </div>
-      </template>
-      <template v-else>
-        <div class="info-title" v-if="detailData.properties">
-          {{ detailData.properties['jcr:title'] || name }}
-        </div>
-      </template>
-      <div class="info-title" v-if="isMultiple">资产元数据</div>
-    </div>
-    <div v-if="!isFolder" class="info-content">
-      <div class="left-info">
-        <template v-if="!isMultiple">
-          <el-image
-            v-if="detailData.renditions"
-            :src="`${baseUrl}${detailData.renditions.detail}`">
-            <div slot="error" class="image-slot">
-              <i class="el-icon-document" style="font-size: 120px;color: #323232"></i>
-            </div>
-          </el-image>
-          <div class="left-name">
-            <div v-if="detailData.metadata">{{ detailData.metadata['dc:title'] }}</div>
-            <div>{{ name }}</div>
-          </div>
-        </template>
-        <template v-else>
-          <div v-for="item in multipleData" :key="item.assetId" class="multiple-list">
-            <el-image class="image" v-if="item.renditions" :src="`${baseUrl}${item.renditions.column}`" fit="cover">
-              <div slot="error" class="image-slot">
-                <i class="el-icon-document" style="font-size: 20px;color: #323232"></i>
-              </div>
-            </el-image>
-            <div class="name">{{ item.name }}</div>
-          </div>
-        </template>
-      </div>
-      <div style="border-right: 1px solid #d2d2d2;display: block;"></div>
-      <div class="right-tab">
-        <el-tabs v-model="selectTab">
-          <el-tab-pane v-for="item in tabs" :key="item.key" :label="item.label" :name="item.key">
-            <div v-if="item.key==='essential'" style="display: flex">
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>元数据</h3>
+    <div class="drawer-bottom-wrap">
+      <div class="drawer-bottom">
+        <div class="drawer-bottom-cnt">
+          <div v-if="!isFolder" class="info-content">
+            <div class="left-info">
+              <template v-if="!isMultiple">
+                <el-image
+                  v-if="detailData.renditions"
+                  :src="`${baseUrl}${detailData.renditions.detail}`">
+                  <div slot="error" class="image-slot">
+                    <i class="el-icon-document" style="font-size: 120px;color: #323232"></i>
+                  </div>
+                </el-image>
+                <div class="left-name-wrap">
+                  <div v-if="detailData.metadata" class="left-name">{{ detailData.metadata['dc:title'] }}</div>
+                  <div class="left-name">{{ name }}</div>
                 </div>
-                <el-form label-position="top" ref="metadataForm" :model="metadata" :rules="metadataFormRules">
-                  <el-form-item label="名称" prop="title">
-                    <el-input v-model.trim="metadata.title"></el-input>
-                  </el-form-item>
-                  <el-form-item label="描述" prop="description">
-                    <el-input v-model.trim="metadata.description"></el-input>
-                  </el-form-item>
-                  <el-form-item label="类型" v-if="!isMultiple">
-                    <el-input v-model="metadata.type" disabled></el-input>
-                  </el-form-item>
-                  <!--                  <el-form-item label="语言">-->
-                  <!--                    <el-select style="width: 100%" v-model="metadata.language" placeholder="选择选项">-->
-                  <!--                    </el-select>-->
-                  <!--                  </el-form-item>-->
-                  <el-form-item label="标记">
-                    <div style="display: flex;align-items: center;">
-                      <el-select v-model="metadata.tags" multiple style="flex: 1;"
-                                 @visible-change="handleSelectTag">
-                        <el-option
-                          v-for="item in tagOptions"
-                          :key="item.value"
-                          :label="item.label"
-                          :value="item.value">
-                        </el-option>
-                      </el-select>
-                      <el-popover v-model="visibleAddTag">
-                        <el-form :rules="rules" :model="tagForm" ref="tagForm">
-                          <el-form-item prop="tag">
-                            <el-input v-model="tagForm.tag" placeholder="请输入标签标题"></el-input>
+              </template>
+              <template v-else>
+                <div v-for="item in multipleData" :key="item.assetId" class="multiple-list">
+                  <el-image class="image" v-if="item.renditions" :src="`${baseUrl}${item.renditions.column}`" fit="cover">
+                    <div slot="error" class="image-slot">
+                      <i class="el-icon-document" style="font-size: 20px;color: #323232"></i>
+                    </div>
+                  </el-image>
+                  <div class="name">{{ item.name }}</div>
+                </div>
+              </template>
+            </div>
+            <div class="right-tab">
+              <div class="right-tab-cnt">
+                <div class="cnt-wrap" v-for="item in tabs" :key="item.key" :label="item.label" :name="item.key">
+                  <div v-if="item.key==='essential'">
+                    <div class="info-list-title">基础信息与版权</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <div class="title-item">
+                        </div>
+                        <el-form label-position="top" ref="metadataForm" :model="metadata" :rules="metadataFormRules">
+                          <el-form-item label="文件名称" prop="title">
+                            <el-input v-model.trim="metadata.title"></el-input>
+                          </el-form-item>
+                          <el-form-item label="版权所有者">
+                            <el-input v-model="metadata.copyrightOwner"></el-input>
+                          </el-form-item>
+                          <el-form-item label="版权截止日期">
+                            <el-date-picker
+                              style="width: 100%;"
+                              v-model="metadata.expires"
+                              type="datetime"
+                              :value-format="dateValueFormat"/>
+                          </el-form-item>
+                          <el-form-item label="资产来源">
+                            <el-select style="width: 100%" v-model="metadata.source">
+                              <el-option
+                                v-for="item in sourceOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="授权范围">
+                            <el-checkbox-group v-model="metadata.authorizationScope">
+                              <el-checkbox v-for="item in authorizationScopeCheckBox" :key="item.value"
+                                           :label="item.value">{{ item.label }}
+                              </el-checkbox>
+                            </el-checkbox-group>
+                          </el-form-item>
+                          <el-form-item label="描述" prop="description">
+                            <el-input type="textarea" rows="3" v-model.trim="metadata.description"></el-input>
                           </el-form-item>
                         </el-form>
-                        <div style="text-align: right; margin: 0;padding-top: 8px;">
-                          <el-button size="mini" type="text" @click="handleCancelAddTag">取消</el-button>
-                          <el-button type="primary" size="mini" @click="handleAddTag">确定</el-button>
-                        </div>
-                        <div slot="reference" class="tag-add" title="添加标记">
-                          <i class="el-icon-circle-plus"/>
-                        </div>
-                      </el-popover>
-                    </div>
-                  </el-form-item>
-                  <el-form-item label="创建时间" v-if="!isMultiple">
-                    <el-input v-model="metadata.created" disabled suffix-icon="el-icon-date"></el-input>
-                  </el-form-item>
-                  <el-form-item label="创建者工具">
-                    <el-input v-model="metadata.creatorTool"></el-input>
-                  </el-form-item>
-                  <!--                  <el-form-item label="审核状态">-->
-                  <!--                    <el-input v-model="metadata.reviewStatus" disabled suffix-icon="el-icon-arrow-down"></el-input>-->
-                  <!--                  </el-form-item>-->
-                  <template v-if="type==='PNG'">
-                    <el-form-item label="宽度">
-                      <el-input v-model="metadata.width" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="高度">
-                      <el-input v-model="metadata.height" disabled></el-input>
-                    </el-form-item>
-                    <!--                    <el-form-item label="位置">-->
-                    <!--                      <el-input v-model="metadata.position"></el-input>-->
-                    <!--                    </el-form-item>-->
-                  </template>
-                  <template v-if="type==='MP4'">
-                    <el-form-item label="大小">
-                      <el-input v-model="metadata.size" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="持续时间（秒）">
-                      <el-input v-model="metadata.duration" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="总比特率(kbps)">
-                      <el-input v-model="metadata.totalBitRate" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="视频编解码器">
-                      <el-input v-model="metadata.videoCodec" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="视频比特率(kbps)">
-                      <el-input v-model="metadata.videoBitRate" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="视频帧速率(fps)">
-                      <el-input v-model="metadata.videoFrameRate" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="音频编解码器">
-                      <el-input v-model="metadata.audioCodec" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="音频比特率(kbps)">
-                      <el-input v-model="metadata.audioBitRate" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="音频采样率(hz)">
-                      <el-input v-model="metadata.audioSampleRate" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item label="数字音频通道">
-                      <el-input v-model="metadata.numberAudioChannels" disabled></el-input>
-                    </el-form-item>
-                  </template>
-                  <!--                  <template v-if="type==='PDF'">-->
-                  <!--                    <el-form-item label="PDF标题">-->
-                  <!--                      <el-input v-model="metadata.pdfTitle"></el-input>-->
-                  <!--                    </el-form-item>-->
-                  <!--                  </template>-->
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>计划停用/激活时间</h3>
-                </div>
-                <el-form label-position="top" :model="metadata">
-                  <el-form-item label="开始时间">
-                    <el-date-picker
-                      style="width: 100%;"
-                      v-model="metadata.onTime"
-                      type="datetime"
-                      :value-format="dateValueFormat"
-                    >
-                    </el-date-picker>
-                  </el-form-item>
-                  <el-form-item label="结束时间">
-                    <el-date-picker
-                      style="width: 100%;"
-                      v-model="metadata.offTime"
-                      type="datetime"
-                      :value-format="dateValueFormat"
-                    >
-                    </el-date-picker>
-                  </el-form-item>
-                  <el-form-item label="排序">
-                    <el-date-picker
-                      style="width: 100%;"
-                      v-model="metadata.sort"
-                      type="datetime"
-                      :value-format="dateValueFormat"
-                    >
-                    </el-date-picker>
-                  </el-form-item>
-                  <el-form-item label="下载统计" v-if="!isMultiple">
-                    <el-input v-model="metadata.downloadStatistics" disabled></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <!--                <div class="title-item">-->
-                <!--                  <h3>引用</h3>-->
-                <!--                </div>-->
-                <div class="title-item" v-show="iptcExtension.downloadManagement">
-                  <h3>相关</h3>
-                  <div class="download-management" @click="handleJump">
-                    <i class="el-icon-paperclip"/>
-                    {{ relatedData.name }}
-                  </div>
-                </div>
-                <!--                <div class="title-item">-->
-                <!--                  <h3>子资产</h3>-->
-                <!--                </div>-->
-              </div>
-            </div>
-            <div v-if="item.key==='senior'" style="display: flex">
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>许可</h3>
-                </div>
-                <el-form label-position="top" :model="senior">
-                  <el-form-item label="创建者">
-                    <el-input v-model="senior.creator"></el-input>
-                  </el-form-item>
-                  <el-form-item label="参与者">
-                    <el-input v-model="senior.contributor"></el-input>
-                  </el-form-item>
-                  <el-form-item label="版权">
-                    <el-input v-model="senior.copyright"></el-input>
-                  </el-form-item>
-                  <el-form-item label="版权所有者">
-                    <el-input v-model="senior.copyrightOwner"></el-input>
-                  </el-form-item>
-                  <el-form-item label="使用条款">
-                    <el-input v-model="senior.usageTerms"></el-input>
-                  </el-form-item>
-                  <el-form-item label="版权到期时间">
-                    <el-date-picker
-                      style="width: 100%;"
-                      v-model="senior.expires"
-                      type="datetime"
-                      :value-format="dateValueFormat"
-                    />
-                  </el-form-item>
-                  <el-form-item label="ID" v-if="!isMultiple">
-                    <el-input v-model="senior.ID" disabled></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>创意评分</h3>
-                </div>
-                <el-input-number controls-position="right" disabled style="width: 100%;"/>
-                <!--                <div class="title-item">-->
-                <!--                  <h3 style="color: #323232">评分</h3>-->
-                <!--                </div>-->
-                <!--                <div>-->
-                <!--                  <div class="score-title">您的评分</div>-->
-                <!--                  <div>-->
-                <!--                    <i v-for="item in score" :key="item"-->
-                <!--                       class="el-icon-star-on score-icon rating-icon"-->
-                <!--                       @click="handleRating(item)"-->
-                <!--                       :style="{color:item<=rating?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                  </div>-->
-                <!--                  <div class="score-title">评分（0 票）</div>-->
-                <!--                  <div style="display: flex;align-items: center" v-if="senior.averageRating">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=senior.averageRating?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(1)</span>-->
-                <!--                  </div>-->
-                <!--                  <div class="score-title">评分细项</div>-->
-                <!--                  <div style="display: flex;align-items: center">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=1?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(0)</span>-->
-                <!--                  </div>-->
-                <!--                  <div style="display: flex;align-items: center">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=2?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(0)</span>-->
-                <!--                  </div>-->
-                <!--                  <div style="display: flex;align-items: center">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=3?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(0)</span>-->
-                <!--                  </div>-->
-                <!--                  <div style="display: flex;align-items: center">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=4?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(0)</span>-->
-                <!--                  </div>-->
-                <!--                  <div style="display: flex;align-items: center">-->
-                <!--                    <i v-for="item in score" :key="item" class="el-icon-star-on score-icon"-->
-                <!--                       :style="{color:item<=5?'rgb(255,215,0)':'rgb(147,147,147)'}"/>-->
-                <!--                    <span class="score-title">(0)</span>-->
-                <!--                  </div>-->
-                <!--                </div>-->
-                <!--              </div>-->
-                <!--              <div class="info-list-item">-->
-                <!--                <div class="title-item">-->
-                <!--                  <h3>提升搜索关键词</h3>-->
-                <!--                </div>-->
-                <!--                <div>-->
-                <!--                  <div class="score-title">搜索提升</div>-->
-                <!--                  <div class="search-promotion">-->
-                <!--                    <div v-for="(item,index) in searchPromotion" :key="index" class="promotion-item">-->
-                <!--                      <el-input v-model="searchPromotion[index]"/>-->
-                <!--                      <i class="el-icon-delete-solid promotion-icon" @click="deleteArr('searchPromotion',index)"/>-->
-                <!--                    </div>-->
-                <!--                    <el-button @click="handleArr('searchPromotion')">添加</el-button>-->
-                <!--                  </div>-->
-                <!--                </div>-->
-              </div>
-            </div>
-            <div v-if="item.key==='iptc'" style="display: flex">
-              <!--              <div class="info-list-item">-->
-              <!--                <div class="title-item">-->
-              <!--                  <h3>联系方式</h3>-->
-              <!--                </div>-->
-              <!--                <el-form label-position="top" :model="iptc">-->
-              <!--                  <el-form-item label="创建者的职务">-->
-              <!--                    <el-input v-model="iptc.jobTitle"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="地址">-->
-              <!--                    <el-input v-model="iptc.address"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="城市">-->
-              <!--                    <el-input v-model="iptc.contactCity"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="省/自治区/直辖市">-->
-              <!--                    <el-input v-model="iptc.contactProvince"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="邮政编码">-->
-              <!--                    <el-input v-model="iptc.postalCode"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="国家/地区">-->
-              <!--                    <el-input v-model="iptc.contactCountry"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="电话">-->
-              <!--                    <el-input v-model="iptc.phone"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="电子邮件">-->
-              <!--                    <el-input v-model="iptc.eMail"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                  <el-form-item label="网站">-->
-              <!--                    <el-input v-model="iptc.website"></el-input>-->
-              <!--                  </el-form-item>-->
-              <!--                </el-form>-->
-              <!--              </div>-->
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>图像</h3>
-                </div>
-                <el-form label-position="top" :model="iptc">
-                  <el-form-item label="创建日期">
-                    <el-date-picker
-                      style="width: 100%;"
-                      v-model="iptc.dateCreated"
-                      type="datetime"
-                      :value-format="dateValueFormat"
-                    >
-                    </el-date-picker>
-                  </el-form-item>
-                  <el-form-item label="知识类型">
-                    <el-input v-model="iptc.intellectualGenre"></el-input>
-                  </el-form-item>
-                  <!--                  <el-form-item label="IPTC场景代码">-->
-                  <!--                    <el-input v-model="iptc.sceneCode"></el-input>-->
-                  <!--                  </el-form-item>-->
-                  <el-form-item label="详细地址">
-                    <el-input v-model="iptc.sublocation"></el-input>
-                  </el-form-item>
-                  <el-form-item label="城市">
-                    <el-input v-model="iptc.imageCity"></el-input>
-                  </el-form-item>
-                  <el-form-item label="省/自治区/直辖市">
-                    <el-input v-model="iptc.imageProvince"></el-input>
-                  </el-form-item>
-                  <el-form-item label="国家/地区">
-                    <el-input v-model="iptc.imageCountry"></el-input>
-                  </el-form-item>
-                  <el-form-item label="ISO国家/地区代码">
-                    <el-input v-model="iptc.countryCode"></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>内容和状态</h3>
-                </div>
-                <el-form label-position="top" :model="iptc">
-                  <el-form-item label="标题">
-                    <el-input v-model="iptc.headline"></el-input>
-                  </el-form-item>
-                  <!--                  <div>-->
-                  <!--                    <div class="score-title">关键字</div>-->
-                  <!--                    <div class="search-promotion">-->
-                  <!--                      <div v-for="(item,index) in keywords" :key="index" class="promotion-item">-->
-                  <!--                        <el-input v-model="keywords[index]"/>-->
-                  <!--                        <i class="el-icon-delete-solid promotion-icon" @click="deleteArr('keywords',index)"/>-->
-                  <!--                      </div>-->
-                  <!--                      <el-button @click="handleArr('keywords')">添加</el-button>-->
-                  <!--                    </div>-->
-                  <!--                  </div>-->
-                  <el-form-item label="IPTC主题代码">
-                    <el-input v-model="iptc.subjectCode"></el-input>
-                  </el-form-item>
-                  <el-form-item label="图片描述作者">
-                    <el-input v-model="iptc.descriptionWriter"></el-input>
-                  </el-form-item>
-                  <el-form-item label="职务标识符">
-                    <el-input v-model="iptc.jobIdentifier"></el-input>
-                  </el-form-item>
-                  <el-form-item label="说明">
-                    <el-input v-model="iptc.instructions"></el-input>
-                  </el-form-item>
-                  <el-form-item label="致谢名单">
-                    <el-input v-model="iptc.creditLine"></el-input>
-                  </el-form-item>
-                  <el-form-item label="源">
-                    <el-input v-model="iptc.source"></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-            </div>
-            <div v-if="item.key==='iptcExtension'" style="display: flex">
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>图像描述</h3>
-                </div>
-                <!--                <div>-->
-                <!--                  <div class="score-title">显示的人员</div>-->
-                <!--                  <div class="search-promotion">-->
-                <!--                    <div v-for="(item,index) in personShown" :key="index" class="promotion-item">-->
-                <!--                      <el-input v-model="keywords[index]"/>-->
-                <!--                      <i class="el-icon-delete-solid promotion-icon" @click="deleteArr('personShown',index)"/>-->
-                <!--                    </div>-->
-                <!--                    <el-button @click="handleArr('personShown')">添加</el-button>-->
-                <!--                  </div>-->
-                <!--                </div>-->
-                <el-form label-position="top" :model="iptcExtension">
-                  <el-form-item label="所涉组织的名称">
-                    <el-input v-model="iptcExtension.organisationName"></el-input>
-                  </el-form-item>
-                  <el-form-item label="所涉组织的代码">
-                    <el-input v-model="iptcExtension.organisationCode"></el-input>
-                  </el-form-item>
-                  <el-form-item label="封面图" v-show="metadata.type==='video/mp4'">
-                    <div class="cover-image">
-                      <el-input class="input" v-model="iptcExtension.coverImage"></el-input>
-                      <div class="icon" @click="handleBtn('el-icon-coverImage')"><i class="el-icon-folder-opened"/>
                       </div>
                     </div>
-                  </el-form-item>
-                  <el-form-item label="下载关联" v-if="!isMultiple">
-                    <el-input v-model="iptcExtension.downloadManagement" disabled></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>关于图像中的模特</h3>
+                  </div>
+                  <div v-if="item.key==='iptcExtension'">
+                    <div class="info-list-title">内容元素</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <el-form label-position="top" :model="iptcExtension">
+                          <el-form-item label="肖像使用授权状态">
+                            <el-select style="width: 100%" v-model="iptcExtension.modelReleaseStatus">
+                              <el-option
+                                v-for="item in releaseOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="人像有无">
+                            <el-select style="width: 100%" v-model="iptcExtension.portrait">
+                              <el-option
+                                v-for="item in portraitOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="标签">
+                            <div style="display: flex;align-items: center;">
+                              <el-select v-model="iptcExtension.tags" multiple style="flex: 1;"
+                                         @visible-change="handleSelectTag">
+                                <el-option
+                                  v-for="item in tagOptions"
+                                  :key="item.value"
+                                  :label="item.label"
+                                  :value="item.value">
+                                </el-option>
+                              </el-select>
+                              <el-popover v-model="visibleAddTag">
+                                <el-form :rules="rules" :model="tagForm" ref="tagForm">
+                                  <el-form-item prop="tag">
+                                    <el-input v-model="tagForm.tag" placeholder="请输入标签标题"></el-input>
+                                  </el-form-item>
+                                </el-form>
+                                <div style="text-align: right; margin: 0;padding-top: 8px;">
+                                  <el-button size="mini" type="text" @click="handleCancelAddTag">取消</el-button>
+                                  <el-button type="primary" size="mini" @click="handleAddTag">确定</el-button>
+                                </div>
+                                <div slot="reference" class="tag-add" title="添加标记">
+                                  <i class="el-icon-circle-plus"/>
+                                </div>
+                              </el-popover>
+                            </div>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="item.key==='senior'">
+                    <div class="info-list-title">下载设置</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <el-form label-position="top" :model="senior">
+                          <el-form-item label="下载量统计" v-if="!isMultiple">
+                            <el-input v-model="senior.downloadStatistics" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="创建者">
+                            <el-input v-model="senior.creator"></el-input>
+                          </el-form-item>
+                          <!--                        <el-form-item label="下载关联" v-if="!isMultiple">-->
+                          <!--                          <el-input v-model="senior.downloadManagement" disabled></el-input>-->
+                          <!--                        </el-form-item>-->
+                          <el-form-item label="封面图" v-show="metadata.type==='video/mp4'">
+                            <div class="cover-image">
+                              <el-input class="input" v-model="senior.coverImage"></el-input>
+                              <div class="icon" @click="handleBtn('el-icon-coverImage')"><i class="el-icon-folder-opened"/>
+                              </div>
+                            </div>
+                          </el-form-item>
+                          <el-form-item label="排序">
+                            <el-date-picker
+                              style="width: 100%;"
+                              v-model="senior.sort"
+                              type="datetime"
+                              :value-format="dateValueFormat">
+                            </el-date-picker>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="item.key==='iptc'">
+                    <div class="info-list-title">IPTC</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <div class="title-item">
+                          <h3>图像</h3>
+                        </div>
+                        <el-form label-position="top" :model="iptc">
+                          <el-form-item label="创建日期">
+                            <el-date-picker
+                              style="width: 100%;"
+                              v-model="iptc.dateCreated"
+                              type="datetime"
+                              :value-format="dateValueFormat"
+                            >
+                            </el-date-picker>
+                          </el-form-item>
+                          <el-form-item label="知识类型">
+                            <el-input v-model="iptc.intellectualGenre"></el-input>
+                          </el-form-item>
+                          <!--                  <el-form-item label="IPTC场景代码">-->
+                          <!--                    <el-input v-model="iptc.sceneCode"></el-input>-->
+                          <!--                  </el-form-item>-->
+                          <el-form-item label="详细地址">
+                            <el-input v-model="iptc.sublocation"></el-input>
+                          </el-form-item>
+                          <el-form-item label="城市">
+                            <el-input v-model="iptc.imageCity"></el-input>
+                          </el-form-item>
+                          <el-form-item label="省/自治区/直辖市">
+                            <el-input v-model="iptc.imageProvince"></el-input>
+                          </el-form-item>
+                          <el-form-item label="国家/地区">
+                            <el-input v-model="iptc.imageCountry"></el-input>
+                          </el-form-item>
+                          <el-form-item label="ISO国家/地区代码">
+                            <el-input v-model="iptc.countryCode"></el-input>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                      <div class="info-list-item">
+                        <div class="title-item">
+                          <h3>内容和状态</h3>
+                        </div>
+                        <el-form label-position="top" :model="iptc">
+                          <el-form-item label="标题">
+                            <el-input v-model="iptc.headline"></el-input>
+                          </el-form-item>
+                          <!--                  <div>-->
+                          <!--                    <div class="score-title">关键字</div>-->
+                          <!--                    <div class="search-promotion">-->
+                          <!--                      <div v-for="(item,index) in keywords" :key="index" class="promotion-item">-->
+                          <!--                        <el-input v-model="keywords[index]"/>-->
+                          <!--                        <i class="el-icon-delete-solid promotion-icon" @click="deleteArr('keywords',index)"/>-->
+                          <!--                      </div>-->
+                          <!--                      <el-button @click="handleArr('keywords')">添加</el-button>-->
+                          <!--                    </div>-->
+                          <!--                  </div>-->
+                          <el-form-item label="IPTC主题代码">
+                            <el-input v-model="iptc.subjectCode"></el-input>
+                          </el-form-item>
+                          <el-form-item label="图片描述作者">
+                            <el-input v-model="iptc.descriptionWriter"></el-input>
+                          </el-form-item>
+                          <el-form-item label="职务标识符">
+                            <el-input v-model="iptc.jobIdentifier"></el-input>
+                          </el-form-item>
+                          <el-form-item label="说明">
+                            <el-input v-model="iptc.instructions"></el-input>
+                          </el-form-item>
+                          <el-form-item label="致谢名单">
+                            <el-input v-model="iptc.creditLine"></el-input>
+                          </el-form-item>
+                          <el-form-item label="源">
+                            <el-input v-model="iptc.source"></el-input>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="item.key==='cameraData'">
+                    <div class="info-list-title">摄像头数据</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <div class="title-item">
+                          <h3>相机信息测试</h3>
+                        </div>
+                        <el-form label-position="top" :model="cameraData">
+                          <el-form-item label="设置">
+                            <el-input v-model="cameraData.make" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="型号">
+                            <el-input v-model="cameraData.model" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="所有者">
+                            <el-input v-model="cameraData.owner" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="镜头">
+                            <el-input v-model="cameraData.lens" disabled></el-input>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                      <div class="info-list-item">
+                        <div class="title-item">
+                          <h3>拍摄信息</h3>
+                        </div>
+                        <el-form label-position="top" :model="cameraData">
+                          <el-form-item label="焦距（毫米）">
+                            <el-input v-model="cameraData.focalLengthInMM" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="焦距（35毫米）">
+                            <el-input v-model="cameraData.focalLengthIn35MM" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="曝光时间（秒）">
+                            <el-input v-model="cameraData.exposureTime" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="光圈数">
+                            <el-input v-model="cameraData.FNumber" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="ISO">
+                            <el-input v-model="cameraData.ISO" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="方向">
+                            <el-input v-model="cameraData.orientation" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="分辨率（每英寸像素）">
+                            <el-input v-model="cameraData.resolution" disabled></el-input>
+                          </el-form-item>
+                          <el-form-item label="闪光灯">
+                            <el-input v-model="cameraData.flash" disabled></el-input>
+                          </el-form-item>
+                        </el-form>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="item.key==='productData'">
+                    <div class="info-list-title">产品数据</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item">
+                        <div class="description">此数字资产当前未与任何产品关联。因此，无“产品数据”可提供。</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="item.key==='analyse'">
+                    <div class="info-list-title">分析</div>
+                    <div class="info-list-wrap">
+                      <div class="info-list-item" style="width: 50%">
+                        <div class="title-item">
+                          <h3>分数</h3>
+                        </div>
+                        <div>
+                          <div class="label">使用情况</div>
+                          <div class="value">0</div>
+                        </div>
+                        <div class="title-item">
+                          <h3>使用情况统计数据</h3>
+                        </div>
+                        <div class="table">
+                          <div class="header">
+                            <span>解决方案</span>
+                            <span>计数</span>
+                            <span>上次使用日期</span>
+                          </div>
+                          <div class="table-item">
+                            <div><i class="el-icon-data-analysis item-icon"/>资产</div>
+                            <div>0</div>
+                            <div>未使用</div>
+                          </div>
+                          <div class="table-item">
+                            <div><i class="el-icon-s-platform item-icon"/>Web和移动设备</div>
+                            <div>0</div>
+                            <div>未使用</div>
+                          </div>
+                          <div class="table-item">
+                            <div><i class="el-icon-share item-icon"/>社交</div>
+                            <div>0</div>
+                            <div>未使用</div>
+                          </div>
+                          <div class="table-item">
+                            <div><i class="el-icon-message item-icon"/>电子邮件</div>
+                            <div>0</div>
+                            <div>未使用</div>
+                          </div>
+                        </div>
+                        <div class="title-item">
+                          <h3>性能统计数据</h3>
+                        </div>
+                        <div class="label">未配置资产分析。</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <el-form label-position="top" :model="iptcExtension">
-                  <el-form-item label="人像有无">
-                    <el-select style="width: 100%" v-model="iptcExtension.portrait">
-                      <el-option
-                        v-for="item in portraitOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="模特的其他信息">
-                    <el-input v-model="iptcExtension.additionalModelInfo"></el-input>
-                  </el-form-item>
-                  <el-form-item label="模特年龄">
-                    <el-input v-model="iptcExtension.modelAge"></el-input>
-                  </el-form-item>
-                  <el-form-item label="小模特图像公开">
-                    <el-select style="width: 100%" v-model="iptcExtension.minorModelImageDisclosure">
-                      <el-option
-                        v-for="(item,index) in minorModelImageDisclosureOptions"
-                        :key="index"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="肖像使用授权状态">
-                    <el-select style="width: 100%" v-model="iptcExtension.modelReleaseStatus">
-                      <el-option
-                        v-for="item in releaseOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="肖像使用授权标识符">
-                    <el-input v-model="iptcExtension.modelReleaseIdentifier"></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>管理和权限信息</h3>
-                </div>
-                <el-form label-position="top" :model="iptcExtension">
-                  <el-form-item label="供应商的图像ID">
-                    <el-input v-model="iptcExtension.supplierImageID"></el-input>
-                  </el-form-item>
-                  <el-form-item label="宽度上限">
-                    <el-input-number style="width: 100%" v-model="iptcExtension.maxAvailableWidth"
-                                     controls-position="right"></el-input-number>
-                  </el-form-item>
-                  <el-form-item label="高度上限">
-                    <el-input-number style="width: 100%" v-model="iptcExtension.maxAvailableHeight"
-                                     controls-position="right"></el-input-number>
-                  </el-form-item>
-                  <el-form-item label="数字源类型">
-                    <el-select style="width: 100%" v-model="iptcExtension.digitalSourceType">
-                      <el-option
-                        v-for="item in digitalSourceTypeOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="资产授权状态">
-                    <el-select style="width: 100%" v-model="iptcExtension.propertyReleaseStatus">
-                      <el-option
-                        v-for="item in propertyReleaseStatusOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="资产使用授权标识符">
-                    <el-input v-model="iptcExtension.propertyReleaseIdentifier"></el-input>
-                  </el-form-item>
-                  <el-form-item label="来源">
-                    <el-select style="width: 100%" v-model="iptcExtension.source">
-                      <el-option
-                        v-for="item in sourceOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="授权范围">
-                    <el-checkbox-group v-model="iptcExtension.authorizationScope">
-                      <el-checkbox v-for="item in authorizationScopeCheckBox" :key="item.value"
-                                   :label="item.value">{{ item.label }}
-                      </el-checkbox>
-                    </el-checkbox-group>
-                  </el-form-item>
-                </el-form>
               </div>
             </div>
-            <div v-if="item.key==='cameraData'" style="display: flex">
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>相机信息测试</h3>
+          </div>
+          <div v-else class="folder-content">
+            <div class="folder-img">
+              <div class="img">
+                <img :src="`${baseUrl}${detailData.path}.folderthumbnail.jpg`"/>
+                <div class="folder-text">
+                  <div>文件夹</div>
+                  <div class="folder-name" v-if="detailData.properties">{{ detailData.properties['jcr:title'] }}</div>
+                  <div class="folder-name" v-else>{{ name }}</div>
                 </div>
-                <el-form label-position="top" :model="cameraData">
-                  <el-form-item label="设置">
-                    <el-input v-model="cameraData.make" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="型号">
-                    <el-input v-model="cameraData.model" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="所有者">
-                    <el-input v-model="cameraData.owner" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="镜头">
-                    <el-input v-model="cameraData.lens" disabled></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <div class="info-list-item">
-                <div class="title-item">
-                  <h3>拍摄信息</h3>
-                </div>
-                <el-form label-position="top" :model="cameraData">
-                  <el-form-item label="焦距（毫米）">
-                    <el-input v-model="cameraData.focalLengthInMM" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="焦距（35毫米）">
-                    <el-input v-model="cameraData.focalLengthIn35MM" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="曝光时间（秒）">
-                    <el-input v-model="cameraData.exposureTime" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="光圈数">
-                    <el-input v-model="cameraData.FNumber" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="ISO">
-                    <el-input v-model="cameraData.ISO" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="方向">
-                    <el-input v-model="cameraData.orientation" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="分辨率（每英寸像素）">
-                    <el-input v-model="cameraData.resolution" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="闪光灯">
-                    <el-input v-model="cameraData.flash" disabled></el-input>
-                  </el-form-item>
-                </el-form>
               </div>
             </div>
-            <div v-if="item.key==='productData'" style="display: flex">
-              <div class="info-list-item">
-                <div class="description">此数字资产当前未与任何产品关联。因此，无“产品数据”可提供。</div>
-              </div>
+            <div class="folder-tab">
+              <el-tabs v-model="selectFolderTab">
+                <el-tab-pane v-for="item in folderTabs" :key="item.key" :label="item.label" :name="item.key">
+                  <div class="folder-tab-content">
+                    <div class="title">文件夹标题</div>
+                    <el-input v-model="detailData.title"></el-input>
+                  </div>
+                  <div class="folder-tab-content" style="margin-top: 24px">
+                    <div class="title">排序</div>
+                    <el-date-picker
+                      style="width: 100%;"
+                      v-model="detailData.sort"
+                      type="datetime"
+                      :value-format="dateValueFormat"
+                    >
+                    </el-date-picker>
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
             </div>
-            <div v-if="item.key==='analyse'" style="display: flex">
-              <div class="info-list-item" style="width: 50%">
-                <div class="title-item">
-                  <h3>分数</h3>
-                </div>
-                <div>
-                  <div class="label">使用情况</div>
-                  <div class="value">0</div>
-                </div>
-                <div class="title-item">
-                  <h3>使用情况统计数据</h3>
-                </div>
-                <div class="table">
-                  <div class="header">
-                    <span>解决方案</span>
-                    <span>计数</span>
-                    <span>上次使用日期</span>
-                  </div>
-                  <div class="table-item">
-                    <div><i class="el-icon-data-analysis item-icon"/>资产</div>
-                    <div>0</div>
-                    <div>未使用</div>
-                  </div>
-                  <div class="table-item">
-                    <div><i class="el-icon-s-platform item-icon"/>Web和移动设备</div>
-                    <div>0</div>
-                    <div>未使用</div>
-                  </div>
-                  <div class="table-item">
-                    <div><i class="el-icon-share item-icon"/>社交</div>
-                    <div>0</div>
-                    <div>未使用</div>
-                  </div>
-                  <div class="table-item">
-                    <div><i class="el-icon-message item-icon"/>电子邮件</div>
-                    <div>0</div>
-                    <div>未使用</div>
-                  </div>
-                </div>
-                <div class="title-item">
-                  <h3>性能统计数据</h3>
-                </div>
-                <div class="label">未配置资产分析。</div>
-              </div>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-    </div>
-    <div v-else class="folder-content">
-      <div class="folder-img">
-        <div class="img">
-          <img :src="`${baseUrl}${detailData.path}.folderthumbnail.jpg`"/>
-          <div class="folder-text">
-            <div>文件夹</div>
-            <div class="folder-name" v-if="detailData.properties">{{ detailData.properties['jcr:title'] }}</div>
-            <div class="folder-name" v-else>{{ name }}</div>
           </div>
         </div>
-      </div>
-      <div class="folder-tab">
-        <el-tabs v-model="selectFolderTab">
-          <el-tab-pane v-for="item in folderTabs" :key="item.key" :label="item.label" :name="item.key">
-            <div class="folder-tab-content">
-              <div class="title">文件夹标题</div>
-              <el-input v-model="detailData.title"></el-input>
-            </div>
-            <div class="folder-tab-content" style="margin-top: 24px">
-              <div class="title">排序</div>
-              <el-date-picker
-                style="width: 100%;"
-                v-model="detailData.sort"
-                type="datetime"
-                :value-format="dateValueFormat"
-              >
-              </el-date-picker>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
       </div>
     </div>
     <select-dialog :detail-data="detailData" :visible.sync="visible" :path="detailData.path"
@@ -829,26 +530,32 @@ export default {
       topBtn: [
         {
           icon: 'el-icon-edit',
+          className: 'top-edit',
           show: false,
           label: '临时编辑'
         }, {
           icon: 'el-icon-edit-outline',
+          className: 'top-edit-outline',
           show: false,
           label: '编辑'
         }, {
           icon: 'el-icon-download',
+          className: 'top-download',
           show: true,
           label: '下载'
         }, {
           icon: 'el-icon-position',
+          className: 'top-move',
           show: true,
           label: '移动'
         }, {
           icon: 'el-icon-paperclip',
+          className: 'top-paperclip',
           show: true,
           label: '相关'
         }, {
           icon: 'el-icon-scissors',
+          className: 'top-scissors',
           show: true,
           label: '取消关联'
         }
@@ -862,18 +569,20 @@ export default {
         key: 'folder'
       }],
       tabs: [{
-        label: '基本',
+        label: '基础信息与版权',
         key: 'essential'
       }, {
-        label: '高级',
-        key: 'senior'
-      }, {
-        label: 'IPTC',
-        key: 'iptc'
-      }, {
-        label: 'IPTC扩展',
+        label: '内容元素',
         key: 'iptcExtension'
+
+      }, {
+        label: '下载设置',
+        key: 'senior'
       }
+        // {
+        //   label: 'IPTC',
+        //   key: 'iptc'
+        // },
         // , {
         //   label: '相机数据',
         //   key: 'cameraData'
@@ -904,10 +613,14 @@ export default {
       },
       metadata: {
         title: '',
+        copyrightOwner: '',
+        expires: '',
+        source: '',
+        authorizationScope: [],
         description: '',
         type: '',
         language: '',
-        tags: '',
+        // tags: '',
         created: '',
         creatorTool: '',
         reviewStatus: '',
@@ -926,17 +639,20 @@ export default {
         numberAudioChannels: '',
         pdfTitle: '',
         onTime: '',
-        offTime: '',
-        sort: '',
-        downloadStatistics: 0
+        offTime: ''
+        // sort: ''
+        // downloadStatistics: 0
       },
       senior: {
+        downloadStatistics: 0,
+        coverImage: '',
+        sort: '',
         creator: '',
         contributor: '',
         copyright: '',
-        copyrightOwner: '',
+        // copyrightOwner: '',
         usageTerms: '',
-        expires: '',
+        // expires: '',
         ID: '',
         averageRating: 0
       },
@@ -969,7 +685,7 @@ export default {
       iptcExtension: {
         organisationName: '',
         organisationCode: '',
-        coverImage: '',
+        // coverImage: '',
         downloadManagement: '',
         portrait: '',
         additionalModelInfo: '',
@@ -983,8 +699,9 @@ export default {
         digitalSourceType: '',
         propertyReleaseStatus: '',
         propertyReleaseIdentifier: '',
-        source: '',
-        authorizationScope: []
+        tags: ''
+        // source: '',
+        // authorizationScope: []
       },
       cameraData: {
         make: '',
@@ -1049,24 +766,31 @@ export default {
         }
         this.detailData = { ...results }
         this.metadata.title = results.metadata['dc:title']
+        this.metadata.copyrightOwner = results.metadata['xmpRights:Owner']
+        this.metadata.expires = results.metadata['prism:expirationDate']
+        this.metadata.source = results.metadata['dc:source']
+        'dc:authorizationScope' in results.metadata && (this.metadata.authorizationScope = results.metadata['dc:authorizationScope'].split(';'))
         this.metadata.description = results.metadata['dc:description']
         this.metadata.type = results.metadata['dc:format']
         this.metadata.reviewStatus = '等待'
-        'cq:tags' in results.metadata && results.metadata['cq:tags'] && (this.metadata.tags = results.metadata['cq:tags'].split(';'))
+        // 'cq:tags' in results.metadata && results.metadata['cq:tags'] && (this.metadata.tags = results.metadata['cq:tags'].split(';'))
         this.metadata.created = dateFormat(new Date(results.metadata['dam:extracted']))
         this.metadata.creatorTool = results.metadata['xmp:CreatorTool']
         this.metadata.height = results.metadata['tiff:ImageLength']
         this.metadata.width = results.metadata['tiff:ImageWidth']
         this.metadata.offTime = results.properties.offTime
         this.metadata.onTime = results.properties.onTime
-        this.metadata.sort = results.metadata['dc:sort']
-        this.metadata.downloadStatistics = (results.metadata['dc:download'] || '0')
+        // this.metadata.sort = results.metadata['dc:sort']
+        // this.metadata.downloadStatistics = (results.metadata['dc:download'] || '0')
+        this.senior.downloadStatistics = (results.metadata['dc:download'] || '0')
+        this.senior.coverImage = results.metadata['dc:coverImage']
+        this.senior.sort = results.metadata['dc:sort']
         this.senior.creator = results.metadata['dc:creator']
         this.senior.contributor = results.metadata['dc:contributor']
         this.senior.copyright = results.metadata['dc:rights']
-        this.senior.copyrightOwner = results.metadata['xmpRights:Owner']
+        // this.senior.copyrightOwner = results.metadata['xmpRights:Owner']
         this.senior.usageTerms = results.metadata['xmpRights:UsageTerms']
-        this.senior.expires = results.metadata['prism:expirationDate']
+        // this.senior.expires = results.metadata['prism:expirationDate']
         this.senior.ID = results.assetId
         this.senior.averageRating = Number(results.properties.averageRating || 0)
         this.rating = Number(results.properties.averageRating || 0)
@@ -1096,11 +820,12 @@ export default {
         this.iptcExtension.maxAvailableHeight = (results.metadata['Iptc4xmpExt:MaxAvailHeight'] === '' ? undefined : results.metadata['Iptc4xmpExt:MaxAvailHeight'])
         this.iptcExtension.digitalSourceType = results.metadata['Iptc4xmpExt:DigitalSourceType']
         this.iptcExtension.propertyReleaseIdentifier = results.metadata['plus:PropertyReleaseID']
-        this.iptcExtension.coverImage = results.metadata['dc:coverImage']
+        // this.iptcExtension.coverImage = results.metadata['dc:coverImage']
         this.iptcExtension.portrait = results.metadata['dc:portrait']
-        this.iptcExtension.source = results.metadata['dc:source']
+        // this.iptcExtension.source = results.metadata['dc:source']
         this.iptcExtension.propertyReleaseStatus = results.metadata['dc:propertyReleaseStatus']
-        'dc:authorizationScope' in results.metadata && (this.iptcExtension.authorizationScope = results.metadata['dc:authorizationScope'].split(';'))
+        'cq:tags' in results.metadata && results.metadata['cq:tags'] && (this.iptcExtension.tags = results.metadata['cq:tags'].split(';'))
+        // 'dc:authorizationScope' in results.metadata && (this.iptcExtension.authorizationScope = results.metadata['dc:authorizationScope'].split(';'))
         // const res = await checkRelated(encodeURIComponent(path))
         // const flag = res[path] ?? {}
         // if (Object.keys(flag).length) {
@@ -1177,7 +902,8 @@ export default {
     },
     handleDownload () {
       downloadByGet(`${this.detailData.path}`, this.detailData.name)
-      this.metadata.downloadStatistics = Number(this.metadata.downloadStatistics) + 1
+      // this.metadata.downloadStatistics = Number(this.metadata.downloadStatistics) + 1
+      this.senior.downloadStatistics = Number(this.senior.downloadStatistics) + 1
     },
     handleMove (data) {
       this.showDrawer = false
@@ -1231,16 +957,21 @@ export default {
         properties.onTime = this.metadata.onTime
         const metadata = {}
         metadata['dc:title'] = this.metadata.title
+        metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
+        metadata['prism:expirationDate'] = this.metadata.expires
+        metadata['dc:source'] = this.metadata.source
+        metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
         metadata['dc:description'] = this.metadata.description
-        metadata['cq:tags'] = this.metadata.tags.join(';')
+        // metadata['cq:tags'] = this.metadata.tags.join(';')
         metadata['xmp:CreatorTool'] = this.metadata.creatorTool
-        metadata['dc:sort'] = this.metadata.sort
+        // metadata['dc:sort'] = this.metadata.sort
+        metadata['dc:sort'] = this.senior.sort
         metadata['dc:creator'] = this.senior.creator
         metadata['dc:contributor'] = this.senior.contributor
         metadata['dc:rights'] = this.senior.copyright
-        metadata['xmpRights:Owner'] = this.senior.copyrightOwner
+        // metadata['xmpRights:Owner'] = this.senior.copyrightOwner
         metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
-        metadata['prism:expirationDate'] = this.senior.expires
+        // metadata['prism:expirationDate'] = this.senior.expires
         metadata['photoshop:DateCreated'] = this.iptc.dateCreated
         metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
         metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
@@ -1268,9 +999,10 @@ export default {
         metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
         metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
         metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
-        metadata['dc:source'] = this.iptcExtension.source
+        // metadata['dc:source'] = this.iptcExtension.source
         metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
-        metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
+        metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+        // metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
         for (const key in metadata) {
           !metadata[key] && delete metadata[key]
         }
@@ -1304,18 +1036,25 @@ export default {
         return
       }
       this.detailData.metadata['dc:title'] = this.metadata.title
+      this.detailData.metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
+      this.detailData.metadata['prism:expirationDate'] = this.metadata.expires
+      this.detailData.metadata['dc:source'] = this.metadata.source
+      this.detailData.metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
       this.detailData.metadata['dc:description'] = this.metadata.description
-      this.detailData.metadata['cq:tags'] = this.metadata.tags.join(';')
+      // this.detailData.metadata['cq:tags'] = this.metadata.tags.join(';')
       this.detailData.metadata['xmp:CreatorTool'] = this.metadata.creatorTool
       this.detailData.properties.onTime = this.metadata.onTime
       this.detailData.properties.offTime = this.metadata.offTime
-      this.detailData.metadata['dc:sort'] = this.metadata.sort
+      // this.detailData.metadata['dc:sort'] = this.metadata.sort
+      this.detailData.metadata['dc:download'] = this.senior.downloadStatistics
+      this.detailData.metadata['dc:coverImage'] = this.senior.coverImage
+      this.detailData.metadata['dc:sort'] = this.senior.sort
       this.detailData.metadata['dc:creator'] = this.senior.creator
       this.detailData.metadata['dc:contributor'] = this.senior.contributor
       this.detailData.metadata['dc:rights'] = this.senior.copyright
-      this.detailData.metadata['xmpRights:Owner'] = this.senior.copyrightOwner
+      // this.detailData.metadata['xmpRights:Owner'] = this.senior.copyrightOwner
       this.detailData.metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
-      this.detailData.metadata['prism:expirationDate'] = this.senior.expires
+      // this.detailData.metadata['prism:expirationDate'] = this.senior.expires
       this.detailData.metadata['photoshop:DateCreated'] = this.iptc.dateCreated
       this.detailData.metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
       this.detailData.metadata['photoshop:City'] = this.iptc.imageCity
@@ -1332,7 +1071,7 @@ export default {
       this.detailData.metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
       this.detailData.metadata['Iptc4xmpExt:OrganisationInImageName'] = this.iptcExtension.organisationName
       this.detailData.metadata['Iptc4xmpExt:OrganisationInImageCode'] = this.iptcExtension.organisationCode
-      this.detailData.metadata['dc:coverImage'] = this.iptcExtension.coverImage
+      // this.detailData.metadata['dc:coverImage'] = this.iptcExtension.coverImage
       this.detailData.metadata['dc:portrait'] = this.iptcExtension.portrait
       this.detailData.metadata['Iptc4xmpExt:AddlModelInfo'] = this.iptcExtension.additionalModelInfo
       this.detailData.metadata['Iptc4xmpExt:ModelAge'] = this.iptcExtension.modelAge
@@ -1344,10 +1083,11 @@ export default {
       this.detailData.metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
       this.detailData.metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
       this.detailData.metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
-      this.detailData.metadata['dc:source'] = this.iptcExtension.source
+      // this.detailData.metadata['dc:source'] = this.iptcExtension.source
       this.detailData.metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
-      this.detailData.metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
-      this.detailData.metadata['dc:download'] = this.metadata.downloadStatistics
+      this.detailData.metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+      // this.detailData.metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
+      // this.detailData.metadata['dc:download'] = this.metadata.downloadStatistics
       this.$refs.metadataForm[0].validate(async valid => {
         if (valid) {
           try {
@@ -1399,7 +1139,7 @@ export default {
       })
     },
     handleCoverImage (path) {
-      this.iptcExtension.coverImage = path
+      this.senior.coverImage = path
     },
     handleCancelAddTag () {
       this.visibleAddTag = false
@@ -1430,413 +1170,674 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drawer-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4375rem 1rem;
-  border-bottom: 0.0625rem solid #E1E1E1;
-  height: 3.25rem;
-  background-color: rgb(250, 250, 250);
-
-  .top-btn {
-    display: flex;
-  }
-
-  .btn {
-    padding: .625rem;
-    font-weight: 700;
-    font-style: normal;
-    color: #6d6d6d;
-    border-color: #d0d0d0;
-    background-color: #fafafa;
-    margin-right: 1rem;
-    box-sizing: border-box;
-    font-size: .9375rem;
-    text-align: center;
-    cursor: pointer;
-    white-space: nowrap;
-
-    i {
-      margin-right: 4px;
-      font-size: 18px;
-    }
-  }
-
-  .btn:hover {
-    background-color: transparent;
-    color: #323232;
-    text-decoration: none;
-  }
-}
-
-.info-item {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 0.0625rem solid #E1E1E1;
-  height: 3rem;
-  background-color: #F0F0F0;
-  position: relative;
-
-  .info-title {
-    order: 2;
-    flex: 0 1 auto; /* Allow the title area to shrink */
+.infoDrawer-box {
+  /deep/ .el-drawer__body {
     overflow: hidden;
-    color: rgb(109, 109, 109);
-    font-size: 1.125rem;
-    font-weight: bold;
   }
-
-  .info-last {
-    position: absolute;
-    right: 1rem;
-    color: rgb(109, 109, 109);
-
-    i {
-      cursor: pointer;
-      font-size: 18px;
-    }
-
-    i:hover {
-      color: #323232;
-    }
-  }
-}
-
-.info-content {
-  height: calc(100vh - 3.25rem - 3rem);
-  display: flex;
-  background-color: rgb(245, 245, 245);
-
-  .left-info {
-    text-align: center;
-    width: 29%;
-    overflow: auto;
-    padding: 0.9375rem;
-
-    /deep/ .el-image {
-      overflow: unset;
-    }
-
-    .left-name {
-      display: block;
-      padding: .9375rem;
-      border-top: .0625rem solid #e6e6e6;
-      box-sizing: border-box;
-      color: #323232;
-      font-size: .8125rem;
-      font-weight: 700;
-      background-color: #FFFFFF;
-    }
-  }
-
-  .right-tab {
-    flex: 1;
-    margin-left: 2rem;
-    padding: .9375rem;
-    overflow: auto;
-
-    .info-list-item {
-      width: 25%;
-      margin-right: 5%;
-
-      .tag-add {
-        margin-left: 12px;
-        cursor: pointer;
-
-        i {
-          font-size: 20px;
-          color: rgb(25, 137, 250);
-        }
-      }
-
-      .cover-image {
-        display: flex;
-
-        .input {
-          flex: 1;
-        }
-
-        .icon {
-          height: 2.375rem;
-          width: 2.375rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          border-radius: 0 .25rem .25rem 0;
-          border: .0625rem solid #d0d0d0;
-          background-color: #fafafa;
-
-          i {
-            font-size: 20px;
-            color: rgb(109, 109, 109);
-          }
-        }
-      }
-
-      .description {
-        margin-top: 1.5625rem;
-        font-size: .8125rem;
-        line-height: 1.0625rem;
-        color: #323232;
-      }
-
-      .title-item {
-        font-size: .8125rem;
-        color: #6d6d6d;
-        line-height: 1.6875rem;
-
-        .download-management {
-          cursor: pointer;
-
-          i {
-            margin-right: 12px;
-          }
-        }
-
-        .download-management:hover {
-          color: #323232;
-        }
-      }
-
-      .label {
-        line-height: 1.6875rem;
-        color: #6d6d6d;
-        font-size: .8125rem;
-      }
-
-      .value {
-        line-height: 1.0625rem;
-        color: #323232;
-        margin: 0 0 .375rem;
-        font-size: 18px;
-        font-weight: bold;
-      }
-
-      .table {
-        width: 100%;
-        font-size: .8125rem;
-
-        .header {
-          display: flex;
-          padding: 0 .625rem;
-          margin-bottom: 1rem;
-
-          span {
-            line-height: 1.0625rem;
-            font-weight: bold;
-            flex: 1;
-          }
-
-          span:nth-child(2) {
-            text-align: center;
-          }
-
-          span:nth-child(3) {
-            text-align: right;
-          }
-        }
-
-        .table-item {
-          display: flex;
-          background-color: #FFFFFF;
-          color: #323232;
-          align-items: center;
-
-          div {
-            flex: 1;
-            padding: .8rem .625rem;
-            border-top: .0625rem solid #e9e9e9;
-          }
-
-          .item-icon {
-            font-size: 18px;
-            margin-right: 1rem;
-          }
-
-          div:nth-child(1) {
-            display: flex;
-          }
-
-          div:nth-child(2) {
-            text-align: center;
-          }
-
-          div:nth-child(3) {
-            text-align: right;
-          }
-        }
-      }
-
-      .score-title {
-        color: #6d6d6d;
-        display: block;
-        line-height: 1.6875rem;
-        font-size: .8125rem;
-      }
-
-      .score-icon {
-        margin-right: .25rem;
-      }
-
-      .rating-icon {
-        font-size: 30px;
-        cursor: pointer;
-      }
-
-      .search-promotion {
-        background: #f0f0f0;
-        border: .0625rem solid #e9e9e9;
-        box-sizing: border-box;
-        padding: .625rem;
-        margin: 0 0 .375rem;
-
-        .promotion-item {
-          margin-bottom: .625rem;
-          display: flex;
-          align-items: center;
-
-          .promotion-icon {
-            cursor: pointer;
-            color: #6d6d6d;
-            padding: .375rem;
-            font-size: 18px;
-          }
-        }
-      }
-    }
-  }
-
-  .multiple-list {
-    display: flex;
-    align-items: center;
-    border-left: .0625rem solid #e6e6e6;
-    border-right: .0625rem solid #e6e6e6;
-    border-bottom: .0625rem solid #e6e6e6;
-
-    /deep/ .image-slot {
+  .drawer-top {
+    background-color:#ffffff;
+    border-bottom: 1px solid #D8D8D8;
+    .drawer-top-cnt {
       display: flex;
       align-items: center;
-      justify-content: center;
-      height: 100%;
+      justify-content: space-between;
+      padding: 0 40px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      width: 1314px;
+      max-width: 100%;
+      margin: 0 auto;
+      height: 64px;
     }
 
-    .image {
-      width: 3rem;
-      height: 3rem;
+    .top-btn {
+      display: flex;
+      .btn {
+        display: inline-block;
+        height: 32px;
+        border-radius: 16px;
+        line-height: 32px;
+        padding: 0 12px 0 36px;
+        cursor: pointer;
+        position: relative;
+        -webkit-transition: .3s ease-out;
+        transition: .3s ease-out;
+        margin-right: 12px!important;
+        font-size: 16px;
+        color: #222222;
+
+        &:hover {
+          background: #ECFAFF;
+        }
+
+        i {
+          display: inline-block;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+
+          &:before {
+            display: none;
+          }
+        }
+
+        &.top-attribute {
+          i{
+            width: 30px;
+            height: 27px;
+            left: 6px;
+            background: url("../../assets/home/attribute.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-move {
+          i{
+            width: 28px;
+            height: 26px;
+            left: 7px;
+            background: url("../../assets/home/move.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-download {
+          i{
+            width: 28px;
+            height: 25px;
+            left: 7px;
+            background: url("../../assets/home/download.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-paperclip {
+          i{
+            width: 27px;
+            height: 25px;
+            left: 7px;
+            background: url("../../assets/home/association.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+        &.top-scissors {
+          i{
+            width: 26px;
+            height: 25px;
+            left: 7px;
+            background: url("../../assets/home/scissors.png") no-repeat center;
+            background-size: cover;
+          }
+        }
+      }
     }
 
-    .name {
-      flex: 1;
-      background-color: #FFFFFF;
-      text-align: left;
-      line-height: 3rem;
-      padding: 0 .625rem;
-      height: 3rem;
-      font-weight: normal;
-      font-style: normal;
-      font-size: .8125rem;
-      color: #323232;
+    .detail-close {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 16px;
+      opacity: 1;
+      border: 1px solid #999999;
+      padding: 0 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #666666;
+      min-width: 80px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      -webkit-transition: .3s ease-out;
+      transition: .3s ease-out;
+      cursor: pointer;
+      &:hover {
+        background: #ECFAFF;
+        color: #000000;
+        border-color: #ECFAFF;
+      }
+    }
+
+    .detail-save {
+      margin-left: 12px;
+      height: 32px;
+      line-height: 32px;
+      border-radius: 16px;
+      opacity: 1;
+      border: 1px solid #008ED3;
+      padding: 0 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #ffffff;
+      min-width: 80px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      -webkit-transition: .3s ease-out;
+      transition: .3s ease-out;
+      cursor: pointer;
+      background: #008ED3;
+      &:hover {
+        opacity: 0.5;
+      }
     }
   }
-}
 
-.folder-content {
-  height: calc(100vh - 3.25rem - 3rem);
-  display: flex;
-  justify-content: center;
-  background-color: rgb(245, 245, 245);
-  padding-top: 1rem;
+  .drawer-bottom-wrap {
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
 
-  .folder-img {
-    box-sizing: border-box;
-    margin: 0 .5rem;
-    width: 30rem;
-    background-color: #FFF;
-    box-shadow: 0 0.09375rem 0.09375rem rgba(0, 0, 0, 0.25);
-    padding: 1rem;
-    height: 16rem;
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 5px;
+    }
+    .drawer-bottom {
+      width: 1314px;
+      max-width: 100%;
+      margin: 42px auto 0;
+      padding: 0 40px;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
 
-    .img {
-      margin: 0 auto;
-      width: 20rem;
-      height: 100%;
-      display: flex;
-      background-color: rgb(233, 233, 233);
-      border-radius: 4px;
-      position: relative;
+      .drawer-bottom-cnt {
+        background: #ffffff;
+        border-radius: 32px 32px 0 0;
+        overflow: hidden;
 
-      img {
-        margin: 0 auto;
-        width: auto;
-        min-height: 1px;
-        max-width: 100%;
-        opacity: 1;
-        -ms-filter: none;
-        filter: none;
-        -webkit-transition: opacity 1s;
-        -moz-transition: opacity 1s;
-        -o-transition: opacity 1s;
-        -ms-transition: opacity 1s;
-        transition: opacity 1s;
-        object-fit: cover;
-      }
+        //.info-item {
+        //  display: flex;
+        //  justify-content: center;
+        //  align-items: center;
+        //  border-bottom: 0.0625rem solid #E1E1E1;
+        //  height: 3rem;
+        //  background-color: #F0F0F0;
+        //  position: relative;
+        //
+        //  .info-title {
+        //    order: 2;
+        //    flex: 0 1 auto; /* Allow the title area to shrink */
+        //    overflow: hidden;
+        //    color: rgb(109, 109, 109);
+        //    font-size: 1.125rem;
+        //    font-weight: bold;
+        //  }
+        //
+        //  .info-last {
+        //    position: absolute;
+        //    right: 1rem;
+        //    color: rgb(109, 109, 109);
+        //
+        //    i {
+        //      cursor: pointer;
+        //      font-size: 18px;
+        //    }
+        //
+        //    i:hover {
+        //      color: #323232;
+        //    }
+        //  }
+        //}
 
-      .folder-text {
-        position: absolute;
-        top: 0;
-        height: 9.375rem;
-        width: 100%;
-        border-top-left-radius: .1875rem;
-        border-top-right-radius: .1875rem;
-        background-color: rgba(30, 30, 30, 0.9);
-        color: #bebebe;
-        box-sizing: border-box;
-        padding-left: .9375rem;
-        padding-bottom: .9375rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        font-size: .75rem;
+        .info-content {
+          padding: 0;
+          display: flex;
 
-        .folder-name {
-          font-weight: 700;
-          font-style: normal;
-          color: #FFFFFF;
-          margin-top: .125rem;
+          .left-info {
+            text-align: center;
+            width: 26%;
+            overflow: hidden;
+            padding: 82px 24px 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+
+            /deep/ .el-image {
+              overflow: unset;
+
+              img {
+                max-height: 130px;
+                object-fit: fill;
+              }
+            }
+
+            .left-name-wrap {
+              padding-top: 18px;
+              background-color: #FFFFFF;
+              .left-name {
+                display: block;
+                box-sizing: border-box;
+                font-size: 16px;
+                color: #222222;
+                font-weight: 400;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+              }
+            }
+          }
+
+          .left-line {
+            border-right: 1px solid #D8D8D8;
+            height: 100vh;
+            margin-top: -30px;
+          }
+
+          .right-tab {
+            flex: 1;
+            padding-left: 3.3333vw;
+            padding-right: 5.3125vw;
+            overflow-y: auto;
+            padding-top: 82px;
+            border-left: 1px solid #D8D8D8;
+
+            .cnt-wrap {
+              border-top: 1px solid #D8D8D8;
+              padding-top: 36px;
+              &:first-child {
+                border-top: 0;
+                padding-top: 0;
+              }
+            }
+
+            .info-list-title {
+              font-size: 18px;
+              color: #222222;
+              line-height: 20px;
+              padding-left: 8px;
+              position: relative;
+              font-weight: 700;
+              &:before {
+                content: '';
+                display: inline-block;
+                width: 3px;
+                height: 20px;
+                background: #008ED3;
+                position: absolute;
+                top: 0;
+                left: 0;
+              }
+            }
+
+            .info-list-wrap {
+              padding-top: 32px;
+              .info-list-item {
+                width: 100%;
+
+                .el-form {
+                  display: flex;
+                  flex-wrap: wrap;
+
+                  .el-form-item {
+                    -webkit-box-flex: 0;
+                    -webkit-flex: 0 0 33.3333%;
+                    -ms-flex: 0 0 33.3333%;
+                    flex: 0 0 33.3333%;
+                    max-width: 33.3333%;
+                    padding-right: 2.5vw;
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding-bottom: 1.875vw;
+
+                    /deep/ .el-form-item__label {
+                      font-size: 14px;
+                      line-height: 20px;
+                      color: #444444;
+                    }
+
+                    /deep/ .el-form-item__content {
+                      padding-top: 4px;
+                      line-height: 0;
+
+                      .el-input__inner {
+                        height: 36px;
+                        line-height: 36px;
+                        border: 1px solid #EDEDED;
+                        border-radius: 8px;
+                      }
+                      .el-textarea__inner {
+                        &::-webkit-scrollbar {
+                          width: 6px;
+                        }
+
+                        &::-webkit-scrollbar-thumb {
+                          background: #ccc;
+                          border-radius: 5px;
+                        }
+                      }
+                    }
+                  }
+                }
+
+                .tag-add {
+                  margin-left: 12px;
+                  cursor: pointer;
+
+                  i {
+                    font-size: 20px;
+                    color: rgb(25, 137, 250);
+                  }
+                }
+
+                .cover-image {
+                  display: flex;
+
+                  .input {
+                    flex: 1;
+                    /deep/ .el-input__inner {
+                      border-radius: 8px 0 0 8px!important;
+                    }
+                  }
+
+                  .icon {
+                    height: 36px;
+                    width: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    border-radius: 0 8px 8px 0;
+                    border: .0625rem solid #d0d0d0;
+                    background-color: #fafafa;
+                    box-sizing: border-box;
+
+                    i {
+                      font-size: 20px;
+                      color: rgb(109, 109, 109);
+                    }
+                  }
+                }
+
+                .description {
+                  margin-top: 1.5625rem;
+                  font-size: .8125rem;
+                  line-height: 1.0625rem;
+                  color: #323232;
+                }
+
+                .title-item {
+                  font-size: 14px;
+                  color: #6d6d6d;
+                  line-height: 20px;
+                  padding-bottom: 12px;
+                  h3 {
+                    margin: 0;
+                    font-weight: 400;
+                  }
+
+                  .download-management {
+                    cursor: pointer;
+
+                    i {
+                      margin-right: 12px;
+                    }
+                  }
+
+                  .download-management:hover {
+                    color: #323232;
+                  }
+                }
+
+                .label {
+                  line-height: 1.6875rem;
+                  color: #6d6d6d;
+                  font-size: .8125rem;
+                }
+
+                .value {
+                  line-height: 1.0625rem;
+                  color: #323232;
+                  margin: 0 0 .375rem;
+                  font-size: 18px;
+                  font-weight: bold;
+                }
+
+                .table {
+                  width: 100%;
+                  font-size: .8125rem;
+
+                  .header {
+                    display: flex;
+                    padding: 0 .625rem;
+                    margin-bottom: 1rem;
+
+                    span {
+                      line-height: 1.0625rem;
+                      font-weight: bold;
+                      flex: 1;
+                    }
+
+                    span:nth-child(2) {
+                      text-align: center;
+                    }
+
+                    span:nth-child(3) {
+                      text-align: right;
+                    }
+                  }
+
+                  .table-item {
+                    display: flex;
+                    background-color: #FFFFFF;
+                    color: #323232;
+                    align-items: center;
+
+                    div {
+                      flex: 1;
+                      padding: .8rem .625rem;
+                      border-top: .0625rem solid #e9e9e9;
+                    }
+
+                    .item-icon {
+                      font-size: 18px;
+                      margin-right: 1rem;
+                    }
+
+                    div:nth-child(1) {
+                      display: flex;
+                    }
+
+                    div:nth-child(2) {
+                      text-align: center;
+                    }
+
+                    div:nth-child(3) {
+                      text-align: right;
+                    }
+                  }
+                }
+
+                .score-title {
+                  color: #6d6d6d;
+                  display: block;
+                  line-height: 1.6875rem;
+                  font-size: .8125rem;
+                }
+
+                .score-icon {
+                  margin-right: .25rem;
+                }
+
+                .rating-icon {
+                  font-size: 30px;
+                  cursor: pointer;
+                }
+
+                .search-promotion {
+                  background: #f0f0f0;
+                  border: .0625rem solid #e9e9e9;
+                  box-sizing: border-box;
+                  padding: .625rem;
+                  margin: 0 0 .375rem;
+
+                  .promotion-item {
+                    margin-bottom: .625rem;
+                    display: flex;
+                    align-items: center;
+
+                    .promotion-icon {
+                      cursor: pointer;
+                      color: #6d6d6d;
+                      padding: .375rem;
+                      font-size: 18px;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          .multiple-list {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+
+            /deep/ .image-slot {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100%;
+            }
+
+            .image {
+              width: 3rem;
+              height: 3rem;
+            }
+
+            .name {
+              flex: 1;
+              background-color: #FFFFFF;
+              text-align: left;
+              line-height: 3rem;
+              padding: 0 .625rem;
+              height: 3rem;
+              font-weight: normal;
+              font-style: normal;
+              font-size: .8125rem;
+              color: #323232;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+            }
+          }
+        }
+
+        .folder-content {
+          height: calc(100vh - 3.25rem - 3rem);
+          display: flex;
+          justify-content: center;
+          background-color: rgb(245, 245, 245);
+          padding-top: 1rem;
+
+          .folder-img {
+            box-sizing: border-box;
+            margin: 0 .5rem;
+            width: 30rem;
+            background-color: #FFF;
+            box-shadow: 0 0.09375rem 0.09375rem rgba(0, 0, 0, 0.25);
+            padding: 1rem;
+            height: 16rem;
+
+            .img {
+              margin: 0 auto;
+              width: 20rem;
+              height: 100%;
+              display: flex;
+              background-color: rgb(233, 233, 233);
+              border-radius: 4px;
+              position: relative;
+
+              img {
+                margin: 0 auto;
+                width: auto;
+                min-height: 1px;
+                max-width: 100%;
+                opacity: 1;
+                -ms-filter: none;
+                filter: none;
+                -webkit-transition: opacity 1s;
+                -moz-transition: opacity 1s;
+                -o-transition: opacity 1s;
+                -ms-transition: opacity 1s;
+                transition: opacity 1s;
+                object-fit: cover;
+              }
+
+              .folder-text {
+                position: absolute;
+                top: 0;
+                height: 9.375rem;
+                width: 100%;
+                border-top-left-radius: .1875rem;
+                border-top-right-radius: .1875rem;
+                background-color: rgba(30, 30, 30, 0.9);
+                color: #bebebe;
+                box-sizing: border-box;
+                padding-left: .9375rem;
+                padding-bottom: .9375rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                font-size: .75rem;
+
+                .folder-name {
+                  font-weight: 700;
+                  font-style: normal;
+                  color: #FFFFFF;
+                  margin-top: .125rem;
+                }
+              }
+            }
+          }
+
+          .folder-tab {
+            width: 46rem;
+            margin: 0 .5rem;
+
+            .folder-tab-content {
+              margin-top: 8px;
+              margin-left: 10px;
+
+              .title {
+                font-size: 1.125rem;
+                line-height: 1.25rem;
+                font-weight: 700;
+                font-style: normal;
+                color: #323232;
+                margin-bottom: 1rem;
+              }
+            }
+          }
         }
       }
     }
   }
 
-  .folder-tab {
-    width: 46rem;
-    margin: 0 .5rem;
+  /deep/ .el-form-item__label {
+    padding: 0;
+    line-height: 30px;
+  }
 
-    .folder-tab-content {
-      margin-top: 8px;
-      margin-left: 10px;
+  /deep/ .el-form-item {
+    margin-bottom: 12px;
+  }
+}
+.el-drawer__wrapper {
+  top: 64px;
 
-      .title {
-        font-size: 1.125rem;
-        line-height: 1.25rem;
-        font-weight: 700;
-        font-style: normal;
-        color: #323232;
-        margin-bottom: 1rem;
-      }
-    }
+  /deep/ .el-drawer__body {
+    background: #F7F8FA;
   }
 }
 
-/deep/ .el-form-item__label {
-  padding: 0;
-  line-height: 30px;
-}
+.el-dialog__wrapper {
+  z-index: 2222!important;
+  overflow: hidden;
 
-/deep/ .el-form-item {
-  margin-bottom: 12px;
+  /deep/ .el-dialog__body {
+    .content {
+      height: calc(83vh - 6.25rem);
+
+      .first-column {
+        display: flex;
+        align-items: center;
+        line-height: 0;
+      }
+    }
+  }
 }
 </style>
