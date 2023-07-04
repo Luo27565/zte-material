@@ -1,59 +1,165 @@
 <template>
-  <el-dialog
-    :title="title"
-    :visible.sync="dialogVisible"
-    :width="width"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :destroy-on-close="true"
-    :before-close="beforeClose"
-    @close="handleClose"
-    @open="handleOpen">
-    <div>
-      <el-upload
-        ref="upload"
-        drag
-        :action="action"
-        :auto-upload="false"
-        :file-list="fileList"
-        :with-credentials="true"
-        :on-preview="handlePreview"
-        :on-change="handleFileList"
-        :on-remove="handleFileList"
-        :before-remove="handleBeforeRemove"
-        :http-request="uploadFile"
-        multiple>
-        <i class="el-icon-upload"></i>
-        <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-        <div slot="file" slot-scope="{file}"
-             :class="{'upload-fail':file.status==='fail'||file.isCancel,'upload-success':file.status==='success','upload-ready':file.status==='ready','upload-uploading':file.status==='uploading'}">
-          <div class="upload-content">
-            <div class="upload-info">
-              <div>
-                <i class="el-icon-document"/>
-                <span>{{ file.name }}</span>
-              </div>
-              <i v-show="file.status==='success'" class="el-icon-circle-check status-icon"/>
-              <i class="el-icon-close close-icon" @click="handleRemove(file)"/>
-            </div>
-            <el-progress v-if="file.status==='uploading'" :percentage="file.percentage" :stroke-width="4"></el-progress>
+  <el-drawer :visible.sync="dialogVisible" direction="rtl" title="上传资产" size="36%" :destroy-on-close="true"
+             :wrapperClosable="false"
+             :append-to-body="true" @close="handleClose">
+    <div class="container">
+      <div class="drawer-item" style="margin-bottom: 0;">
+        <div class="drawer-item-row">
+          <div class="drawer-text">上传类型</div>
+          <div class="drawer-select">
+            <el-select v-model="uploadType" popper-class="select-for-zte" class="select-list-item">
+              <el-option value="file" label="文件"/>
+              <el-option value="folder" label="文件夹"/>
+            </el-select>
+          </div>
+        </div>
+      </div>
+      <el-upload :class="['draw-upload',fileList.length!==0?'has-exits':'']" :action="action" :auto-upload="false"
+                 :disabled="uploaded"
+                 ref="upload"
+                 :list-type="fileList.length?'text':'text-none'"
+                 :with-credentials="true" :drag="isDrag" multiple
+                 :on-change="handleFileList"
+                 :on-remove="handleFileList"
+                 :before-remove="handleBeforeRemove"
+                 :http-request="uploadFile"
+                 :file-list="fileList">
+        <img alt="" src="../../assets/home/upload-black.png" class="el-icon-upload"/>
+        <div class="el-upload__text">
+          <em>{{ fileList.length === 0 ? `点击选择文件${uploadType === 'folder' ? '夹' : ''}` : '继续上传' }}</em>{{
+            fileList.length === 0 && uploadType === 'file' ? '或拖拽文件到此处' : ''
+          }}
+        </div>
+        <div slot="file" slot-scope="{file}">
+          <div class="upload-info">
+            <span>{{ file.name }}</span>
+            <el-progress :percentage="file.percentage" :format="format"
+                         :stroke-width="4"></el-progress>
+            <img @click="handleRemove(file)" alt="" src="../../assets/home/upload-file-close.png"/>
           </div>
         </div>
       </el-upload>
+      <div class="drawer-item drawer-item-first">
+        <div class="drawer-item-row">
+          <div class="drawer-text">资产来源</div>
+          <div class="drawer-select">
+            <el-select v-model="metadata.source" popper-class="select-for-zte" class="select-list-item">
+              <el-option
+                v-for="item in sourceOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+        <div class="drawer-item-row">
+          <div class="drawer-text">版权截止日期</div>
+          <div class="drawer-select">
+            <el-date-picker
+              class="select-list-item"
+              prefix-icon="el-icon-date"
+              v-model="metadata.expires"
+              type="datetime"
+              :value-format="dateValueFormat"/>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-item-row">
+          <div class="drawer-text">是否推荐</div>
+          <div class="drawer-select">
+            <el-select v-model="metadata.recommend" popper-class="select-for-zte" class="select-list-item">
+              <el-option
+                v-for="item in whetherRecommendedOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+        <div class="drawer-item-row">
+          <div class="drawer-text">版权类型</div>
+          <div class="drawer-select">
+            <el-select v-model="metadata.rights" popper-class="select-for-zte" class="select-list-item">
+              <el-option
+                v-for="item in typeOfCopyrightOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-item-row">
+          <div class="drawer-text">授权范围</div>
+          <div class="drawer-select drawer-checkbox">
+            <el-checkbox-group v-model="metadata.authorizationScope" fill="#222222">
+              <el-checkbox v-for="item in authorizationScopeCheckBox" :key="item.value"
+                           :label="item.value">{{ item.label }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </div>
+        <div class="drawer-item-row">
+          <div class="drawer-text">色彩</div>
+          <div class="drawer-select">
+            <el-select v-model="metadata.color" popper-class="select-for-zte" class="select-list-item">
+              <el-option
+                v-for="item in colorOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-item">
+        <div style="width: 100%">
+          <div class="drawer-text">标签</div>
+          <div class="drawer-select">
+            <el-select v-model="metadata.tags" multiple popper-class="select-for-zte" style="width: 45%;"
+                       @visible-change="handleSelectTag">
+              <el-option
+                v-for="item in tagOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="tag-tag">
+            <span v-for="(item,index) in metadata.tags" :key="index" class="tag-item">
+              {{ tagOptions.find(i => i.value === item).label }}
+              <i class="el-icon-close" @click="handleDeleteTags(item)"/>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-footer" v-loading="loading">
+        <button :class="['btn confirm',fileList.length===0?'disabled':'']" @click="handleSubmit">
+          {{ uploaded ? '关闭' : '确定上传' }}
+        </button>
+        <div class="btn" @click="handleClose">取消</div>
+      </div>
     </div>
-    <span slot="footer" class="dialog-footer">
-    <el-button :disabled="loading" @click="handleClose" v-show="!uploaded">取 消</el-button>
-    <el-button type="primary" @click="handleUpload" :disabled="fileList.length === 0" v-show="!uploaded"
-               :loading="loading">上 传</el-button>
-      <el-button type="primary" @click="closeDialog" :disabled="showFooterClose"
-                 v-show="uploaded">关 闭</el-button>
-    </span>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script>
 import axios, { CancelToken } from 'axios'
-import { getToken, uploadUrl } from '@/api/api'
+import { getToken, searchPopularTag, uploadUrl } from '@/api/api'
+import {
+  sourceOptions,
+  authorizationScopeCheckBox,
+  colorOptions,
+  whetherRecommendedOptions,
+  typeOfCopyrightOptions
+} from '@/utils'
 import zteStore from '@/store'
 import { mapState } from 'pinia'
 
@@ -63,97 +169,123 @@ export default {
     dialogVisible: {
       type: Boolean,
       default: false
-    },
-    title: {
-      type: String,
-      default: '选择文件'
-    },
-    width: {
-      type: String,
-      default: '50%'
-    },
-    existData: {
-      type: Array,
-      default: () => ([])
     }
   },
   computed: {
-    ...mapState(zteStore, ['lastCrumb']),
-    showFooterClose: function () {
-      return this.fileList.some(e => e.status === 'uploading')
-    }
+    ...mapState(zteStore, ['lastCrumb'])
   },
   data () {
     return {
-      action: uploadUrl,
+      uploaded: false,
       loading: false,
+      isDrag: true,
+      dateValueFormat: 'yyyy-MM-dd HH:mm:ss',
+      sourceOptions,
+      authorizationScopeCheckBox,
+      colorOptions,
+      whetherRecommendedOptions,
+      typeOfCopyrightOptions,
+      tagOptions: [],
+      action: uploadUrl,
+      uploadType: 'file',
       fileList: [],
       cancelRequest: [],
-      uploaded: false,
-      cancelUploadExist: false,
-      repeatData: []
+      metadata: {
+        source: '',
+        authorizationScope: [],
+        color: '',
+        recommend: 'false',
+        expires: '',
+        rights: '',
+        tags: []
+      }
+    }
+  },
+  watch: {
+    uploadType: {
+      handler (newVal) {
+        if (newVal === 'folder') {
+          this.isDrag = false
+          document.getElementsByClassName('el-upload__input')[0].webkitdirectory = true
+        } else {
+          this.isDrag = true
+          document.getElementsByClassName('el-upload__input')[0].webkitdirectory = false
+        }
+      }
     }
   },
   methods: {
-    handleOpen () {
-      this.uploaded = false
-      this.fileList = []
-      this.cancelRequest = []
+    format (percentage) {
+      return percentage === 100 ? '完成' : percentage === 0 ? '等待上传' : percentage === -1 ? '上传失败' : percentage === -2 ? '取消上传' : `${percentage}%`
+    },
+    async handleTags () {
+      const { results } = await searchPopularTag('/content/cq:tags/zte-asset-tags')
+      const flag = Object.keys(results)
+      this.tagOptions = flag.map(e => ({
+        label: results[e],
+        value: e
+      }))
+    },
+    handleSelectTag (flag) {
+      flag && this.handleTags()
     },
     handleClose () {
-      this.cancelUploadExist = false
-      this.$emit('update:dialogVisible', false)
-    },
-    beforeClose (done) {
-      this.loading === false && done()
-      this.loading === false && (this.fileList = [])
-    },
-    handleUpload () {
-      const flag = this.fileList.filter(e => this.existData.some(i => i.name === e.name))
-      this.repeatData = [...flag]
-      if (flag.length) {
-        this.$confirm(`此位置已存在名为${flag.map(e => e.name).join('，')}的资产`, '名称冲突', {
-          confirmButtonText: flag.length === 1 ? '替换' : '替换全部',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$refs.upload.submit()
-          this.uploaded = true
-        }).catch(() => {
-          if (this.fileList.length === 1 || this.fileList.length === flag.length) {
-            this.handleClose()
-          } else {
-            this.cancelUploadExist = true
-            this.$refs.upload.submit()
-            this.uploaded = true
-          }
-        })
-      } else {
-        this.$refs.upload.submit()
-        this.uploaded = true
+      this.fileList = []
+      this.uploaded = false
+      const flag = {
+        source: '',
+        authorizationScope: [],
+        color: '',
+        recommend: 'false',
+        expires: '',
+        rights: '',
+        tags: []
       }
+      this.metadata = { ...flag }
+      this.$emit('close')
     },
-    handlePreview (file) {
-      console.log(file)
+    handleDeleteTags (key) {
+      const { tags } = this.metadata
+      this.metadata.tags = tags.filter(i => i !== key)
     },
     handleFileList (file, fileList) {
       this.fileList = fileList
     },
+    handleSubmit () {
+      if (this.uploaded) {
+        this.handleClose()
+      } else {
+        this.$refs.upload.submit()
+        this.uploaded = true
+        this.loading = true
+      }
+    },
+    handleBeforeRemove (file) {
+      const { status } = file
+      if (status !== 'ready') return false
+    },
+    handleRemove (file) {
+      const {
+        uid,
+        status
+      } = file
+      status === 'uploading' && (this.cancelRequest.find(e => e.uid === uid).cancel())
+      status === 'ready' && (this.fileList = [...this.fileList.filter(e => e.uid !== uid)])
+    },
     async uploadFile (request) {
       const { id } = this.lastCrumb
       const { file } = request
-      if (this.cancelUploadExist && this.existData.some(i => i.name === file.name)) {
-        this.fileList = [...this.fileList.map(e => ({
-          ...e,
-          status: e.uid === file.uid ? 'fail' : e.status,
-          name: `${e.name}${e.uid === file.uid ? '（取消上传）' : ''}`,
-          isCancel: e.uid === file.uid
-        }))]
-        return
-      }
       const formData = new FormData()
       formData.set('file', file)
       formData.set('filePath', id)
+      formData.set('dc:source', this.metadata.source)
+      formData.set('prism:expirationDate', this.metadata.expires)
+      formData.set('dc:recommend', this.metadata.recommend)
+      formData.set('dc:rights', this.metadata.rights)
+      formData.set('dc:authorizationScope', this.metadata.authorizationScope.join(';'))
+      formData.set('dc:color', this.metadata.color)
+      formData.set('tagPath', this.metadata.tags.join(';'))
+      formData.set('cover', 'true')
       const { token } = await getToken()
       axios({
         method: 'post',
@@ -181,126 +313,359 @@ export default {
         this.fileList = [...this.fileList.map(e => ({
           ...e,
           status: e.uid === file.uid ? 'success' : e.status,
-          response: e.uid === file.uid ? res : e.response,
-          name: `${e.name}${e.uid === file.uid ? '（上传成功）' : ''}`
+          response: e.uid === file.uid ? res : e.response
         }))]
       }).catch(rej => {
-        const { response } = rej
+        const {
+          response,
+          code
+        } = rej
         this.fileList = [...this.fileList.map(e => ({
           ...e,
           status: e.uid === file.uid ? 'fail' : e.status,
           response: e.uid === file.uid ? response : e.response,
-          name: `${e.name}${e.uid === file.uid ? '（上传失败）' : ''}`
+          percentage: e.uid === file.uid ? code === 'ERR_CANCELED' ? -2 : -1 : e.percentage
         }))]
       }).finally(() => {
         this.loading = false
       })
-    },
-    handleBeforeRemove (file) {
-      const { status } = file
-      if (status !== 'ready') return false
-    },
-    handleRemove (file) {
-      const {
-        uid,
-        status
-      } = file
-      status === 'uploading' && (this.cancelRequest.find(e => e.uid === uid).cancel())
-      status === 'ready' && (this.fileList = [...this.fileList.filter(e => e.uid !== uid)])
-    },
-    closeDialog () {
-      console.log(this.fileList)
-      this.$emit('finish')
-      this.handleClose()
     }
   }
 }
 </script>
 
+<style lang="scss">
+.select-for-zte {
+  z-index: 3000 !important;
+}
+</style>
 <style lang="scss" scoped>
-/deep/ .el-upload {
-  width: 100%;
+.el-drawer__wrapper {
+  top: 0 !important;
+  z-index: 2200 !important;
+}
 
-  .el-upload-dragger {
-    width: 100%;
+/deep/ .el-select-dropdown .el-popper {
+  z-index: 2400 !important;
+}
+
+/deep/ .el-drawer__header {
+  font-size: 20px;
+  color: #222222;
+  padding: 24px 28px 0 24px;
+  line-height: 28px;
+  font-weight: 400;
+  margin-bottom: 40px;
+}
+
+.container {
+  padding: 0 50px 0 60px;
+  height: 100%;
+  position: relative;
+  box-sizing: border-box;
+
+  .drawer-footer {
+    margin-top: 100px;
+    padding-bottom: 60px;
+    display: flex;
+    flex-direction: row-reverse;
+
+    .btn {
+      width: 95px;
+      height: 36px;
+      border-radius: 32px;
+      border: 1px solid #666666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666666;
+      font-weight: 400;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .confirm {
+      margin-left: 30px;
+      background: #008ED3;
+      color: #FFFFFF;
+      border: 1px solid #008ED3;
+    }
+
+    .disabled {
+      background: #F2F3F5;
+      border: 1px solid #F2F3F5;
+      color: #666666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   }
-}
 
-/deep/ .el-upload-list {
-  max-height: 200px;
-  overflow: auto;
-}
+  .drawer-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
 
-/* 滚动槽 */
-/deep/ .el-upload-list::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+    .drawer-item-row {
+      width: 45%;
 
-/deep/ .el-upload-list::-webkit-scrollbar-track {
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.06);
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.08);
-}
-
-/* 滚动条滑块 */
-/deep/ .el-upload-list::-webkit-scrollbar-thumb {
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.12);
-  -webkit-box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
-}
-
-.upload-success {
-  color: #67C23A;
-
-  .close-icon {
-    display: none !important;
+      .select-list-item {
+        width: 100%;
+      }
+    }
   }
-}
 
-.upload-fail {
-  color: #F56C6C;
-
-  .close-icon {
-    display: none !important;
+  .drawer-item-first {
+    margin-top: 36px;
   }
-}
 
-.upload-ready {
-  .status-icon {
-    display: none;
+  .drawer-text {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
   }
-}
 
-.upload-content {
-  cursor: pointer;
-  padding: 0 8px;
+  .tag-tag {
+    display: flex;
+    margin-top: 20px;
 
-  .upload-info {
+    .tag-item {
+      background: #F2F3F5;
+      border-radius: 4px;
+      border: 1px solid #F2F3F5;
+      font-size: 14px;
+      font-weight: 400;
+      color: #222222;
+      line-height: 22px;
+      display: inline-block;
+      padding: 4px 8px;
+      margin: 0 12px 8px 0;
+      cursor: pointer;
+    }
+  }
+
+  .drawer-select {
+    margin: 6px 0 0;
+
+    /deep/ .el-input__inner {
+      width: 100%;
+      height: 36px;
+      border-radius: 8px;
+      background: #F2F3F5;
+      font-size: 14px;
+      color: #86909C;
+      font-weight: 400;
+      transition: all .5s;
+    }
+
+    /deep/ .el-input__icon {
+      line-height: 36px;
+    }
+
+    /deep/ .el-input__inner:hover {
+      background: #FFFFFF;
+      border-color: #008ED3;
+      color: #222222;
+    }
+
+    /deep/ .is-focus .el-input__inner {
+      background: #FFFFFF;
+      border-color: #008ED3;
+      color: #222222;
+    }
+
+    /deep/ .el-select .el-input__inner:focus {
+      background: #FFFFFF;
+      border-color: #008ED3;
+      color: #222222;
+    }
+  }
+
+  .drawer-checkbox {
+    margin: 16px 0 0;
+  }
+
+  /deep/ .el-checkbox__inner {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+  }
 
-    i {
-      font-size: 18px;
+  /deep/ .el-checkbox__label {
+    color: #666666;
+  }
+
+  /deep/ .el-checkbox__inner::after {
+    left: 5.5px;
+    top: 2px;
+  }
+
+  /deep/ .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #13A1E7;
+    border-color: #13A1E7;
+  }
+
+  /deep/ .is-checked .el-checkbox__label {
+    color: #222222;
+  }
+
+  /deep/ .el-select__tags {
+    display: none;
+  }
+
+  .draw-upload {
+    margin-top: 24px;
+    width: 100%;
+    height: 160px;
+    position: relative;
+
+    /deep/ .el-upload-list__item:hover {
+      background-color: unset;
+      cursor: pointer;
     }
 
-    span {
-      margin-left: 8px;
+    /deep/ .el-upload-list {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      width: 100%;
+      padding: 0 36px;
+      box-sizing: border-box;
+      height: 180px;
+      overflow-y: auto;
+      border-radius: 0 16px 0 0;
+      border-bottom: 1px solid #D8D8D8;
+    }
+
+    /* 滚动槽 */
+    /deep/ .el-upload-list::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    /deep/ .el-upload-list::-webkit-scrollbar-track {
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.06);
+      -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.08);
+    }
+
+    /* 滚动条滑块 */
+    /deep/ .el-upload-list::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.12);
+      -webkit-box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /deep/ .el-upload-list__item .el-progress {
+      width: 50%;
+      position: relative;
+      top: unset;
+      display: flex;
+      align-items: center;
+    }
+
+    /deep/ .el-upload-list__item .el-progress__text {
+      font-size: 12px !important;
+      color: #3D3D3D !important;
+      position: relative;
+      right: unset;
+      top: unset;
+    }
+
+    /deep/ .el-upload-list__item .el-icon-close {
+      position: relative;
+      display: block !important;
+    }
+
+    /deep/ .el-upload-list__item:hover .el-progress__text {
+      display: block;
+    }
+
+    /deep/ .el-progress-bar {
+      flex: 1;
+    }
+
+    .upload-info {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 400;
+      color: #3D3D3D;
+
+      span {
+        flex: 1;
+      }
+
+      img {
+        width: 19px;
+        height: 23px;
+      }
+    }
+
+    /deep/ .el-upload-list--text-none {
+      display: none;
+    }
+
+    /deep/ .el-upload {
+      width: 100%;
+      height: 100%;
+    }
+
+    /deep/ .el-upload-dragger {
+      border-radius: 16px;
+      border: 1px solid #999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    /deep/ .el-upload__text {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 20px;
+      color: #222222;
+      margin-top: 10px;
+    }
+
+    /deep/ .el-upload__text em {
+      color: #008ED3;
+      position: relative;
+    }
+
+    /deep/ .el-upload__text em::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: #008ED3;
+    }
+
+    /deep/ .el-upload-dragger .el-icon-upload {
+      width: 35px;
+      height: 29px;
+      margin: unset;
+    }
+  }
+
+  .has-exits {
+    height: 270px;
+
+    /deep/ .el-upload__text {
+      margin-top: unset;
+    }
+
+    /deep/ .el-upload-dragger {
+      justify-content: flex-end;
+      padding-bottom: 22px;
     }
   }
 }
 
-/deep/ .el-upload-list__item:hover .is-success .el-icon-close {
-  display: none;
-}
-
-/deep/ .el-upload-list__item .el-progress {
-  position: relative;
-  top: 0;
-}
-
-/deep/ .el-upload-list__item .el-progress__text {
-  top: -17px;
-}
 </style>

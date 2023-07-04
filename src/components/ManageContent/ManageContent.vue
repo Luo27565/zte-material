@@ -28,16 +28,16 @@
               </el-option>
             </el-select>
           </div>
-<!--          <div class="filter-item">-->
-<!--            <el-select v-model="searchForm.authorization" clearable placeholder="授权状态">-->
-<!--              <el-option-->
-<!--                v-for="item in authorizationSelect"-->
-<!--                :key="item.value"-->
-<!--                :label="item.label"-->
-<!--                :value="item.value">-->
-<!--              </el-option>-->
-<!--            </el-select>-->
-<!--          </div>-->
+          <!--          <div class="filter-item">-->
+          <!--            <el-select v-model="searchForm.authorization" clearable placeholder="授权状态">-->
+          <!--              <el-option-->
+          <!--                v-for="item in authorizationSelect"-->
+          <!--                :key="item.value"-->
+          <!--                :label="item.label"-->
+          <!--                :value="item.value">-->
+          <!--              </el-option>-->
+          <!--            </el-select>-->
+          <!--          </div>-->
           <div class="filter-item">
             <el-select v-model="searchForm.source" clearable placeholder="来源">
               <el-option
@@ -78,30 +78,31 @@
               </div>
             </el-popover>
           </div>
-<!--          <div class="filter-item">-->
-<!--            <el-popover-->
-<!--              placement="bottom"-->
-<!--              trigger="click"-->
-<!--              @show="showUpdateTime = !showUpdateTime"-->
-<!--              @hide="showUpdateTime = !showUpdateTime">-->
-<!--              <el-date-picker-->
-<!--                v-model="searchForm.updateTime"-->
-<!--                type="datetimerange"-->
-<!--                start-placeholder="开始时间"-->
-<!--                end-placeholder="结束时间"-->
-<!--                :default-time="['00:00:00']">-->
-<!--              </el-date-picker>-->
-<!--              <div slot="reference" class="update-time">-->
-<!--                <span>修改时间</span>-->
-<!--                <i :class="['el-icon-arrow-down','time-icon',{iconTime:showUpdateTime}]"/>-->
-<!--              </div>-->
-<!--            </el-popover>-->
-<!--          </div>-->
+          <!--          <div class="filter-item">-->
+          <!--            <el-popover-->
+          <!--              placement="bottom"-->
+          <!--              trigger="click"-->
+          <!--              @show="showUpdateTime = !showUpdateTime"-->
+          <!--              @hide="showUpdateTime = !showUpdateTime">-->
+          <!--              <el-date-picker-->
+          <!--                v-model="searchForm.updateTime"-->
+          <!--                type="datetimerange"-->
+          <!--                start-placeholder="开始时间"-->
+          <!--                end-placeholder="结束时间"-->
+          <!--                :default-time="['00:00:00']">-->
+          <!--              </el-date-picker>-->
+          <!--              <div slot="reference" class="update-time">-->
+          <!--                <span>修改时间</span>-->
+          <!--                <i :class="['el-icon-arrow-down','time-icon',{iconTime:showUpdateTime}]"/>-->
+          <!--              </div>-->
+          <!--            </el-popover>-->
+          <!--          </div>-->
         </div>
         <div class="search-container">
           <search class="left-content"/>
           <div class="right-content">
-            <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog" class="btn create-folder">
+            <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog"
+                       class="btn create-folder">
               <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
             </el-button>
             <!--          <el-button v-permission="assetRole" type="primary" size="mini" @click="showUpload=true" class="btn">-->
@@ -133,7 +134,7 @@
               </el-dropdown-menu>
             </el-dropdown>
             <div class="upload-wrap" :class="showUploadBox? 'active':''">
-              <div class="upload-title" @click="handleUploadBox">上传</div>
+              <div class="upload-title" @click="showUpload=true">上传</div>
               <div class="upload-box">
                 <span class="upload-file" @click="showUpload=true,showUploadBox=false">上传文件</span>
                 <span class="upload-folder" @click="showFolderUpload=true, showUploadBox=false">文件夹上传</span>
@@ -286,7 +287,7 @@
     </div>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
-    <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData"/>
+    <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData" @close="showUpload = false"/>
     <folderUpload :dialog-visible.sync="showFolderUpload" @finish="refresh" :exist-data="listViewData"/>
     <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
                    @move="handleDetailToMove"/>
@@ -738,7 +739,7 @@ export default {
   flex-direction: column;
   padding: 0 20px;
 
-  /deep/  .bread-crumb {
+  /deep/ .bread-crumb {
     padding: 24px 10px 20px;
     font-size: 14px;
     line-height: 20px;
@@ -800,7 +801,7 @@ export default {
           position: absolute;
           top: 14px;
           right: 260px;
-          z-index: 2101;
+          z-index: 1999;
           background: #ffffff;
 
           /deep/ .input {
@@ -817,6 +818,7 @@ export default {
 
             .el-input__suffix {
               right: 0;
+
               .el-input__clear {
                 font-size: 20px;
                 line-height: 36px;
@@ -856,6 +858,7 @@ export default {
 
           /deep/ .select {
             width: 75px;
+
             &:after {
               content: '';
               position: absolute;
@@ -866,18 +869,22 @@ export default {
               background-color: #BABABA;
               transform: translateY(-50%);
             }
+
             .el-input {
               height: 100%;
+
               .el-input__inner {
                 height: 36px;
                 line-height: 36px;
                 border-radius: 18px 0 0 18px;
                 padding-right: 26px;
               }
+
               .el-input__suffix {
                 height: 20px;
                 top: 50%;
                 transform: translateY(-50%);
+
                 .el-input__icon {
                   display: inline-block;
                   width: 20px;
@@ -888,9 +895,11 @@ export default {
                   &.is-reverse {
                     transform: rotate(180deg);
                   }
+
                   &:before {
                     display: none;
                   }
+
                   &:after {
                     display: none;
                   }
@@ -907,6 +916,7 @@ export default {
 
           /deep/ .btn {
             height: 100%;
+
             &.create-folder {
               height: 32px;
               font-size: 14px;
@@ -926,11 +936,13 @@ export default {
                 width: 20px;
                 height: 20px;
                 background: url("../../assets/home/holdings.png") no-repeat center;
+
                 &:before {
                   display: none;
                 }
               }
             }
+
             &.all-btn {
               height: 32px;
               font-size: 14px;
@@ -940,7 +952,8 @@ export default {
               border: 0;
               -webkit-transition: .3s ease-out;
               transition: .3s ease-out;
-              i{
+
+              i {
                 font-size: 20px;
               }
 
@@ -949,8 +962,10 @@ export default {
               }
             }
           }
+
           /deep/ .el-dropdown {
             height: 32px;
+
             .operate-btn {
               height: 32px;
               font-size: 14px;
@@ -960,7 +975,8 @@ export default {
               border: 0;
               -webkit-transition: .3s ease-out;
               transition: .3s ease-out;
-              i{
+
+              i {
                 font-size: 14px;
                 -webkit-transition: .3s ease-out;
                 transition: .3s ease-out;
@@ -968,7 +984,8 @@ export default {
 
               &:hover {
                 background: #ECFAFF;
-                i{
+
+                i {
                   transform: rotate(180deg);
                 }
               }
@@ -1120,6 +1137,7 @@ export default {
           .el-checkbox {
             display: none;
           }
+
           .has-gutter {
             > tr {
               background: #F7F8FA;
@@ -1129,6 +1147,7 @@ export default {
               th.el-table__cell {
                 background: #F7F8FA;
                 border: 0;
+
                 .cell {
                   font-size: 16px;
                   color: #666666;
@@ -1140,6 +1159,7 @@ export default {
                 &:first-child {
                   border-radius: 4px 0 0 4px;
                 }
+
                 &:last-child {
                   border-radius: 0 4px 4px 0;
                 }
@@ -1171,6 +1191,7 @@ export default {
           > td {
             border-color: #E7E7E7;
           }
+
           &:hover {
             > td {
               cursor: pointer;
@@ -1206,14 +1227,17 @@ export default {
       overflow: hidden;
       -webkit-transition: .3s ease-out;
       transition: .3s ease-out;
+
       &.active {
         overflow: visible;
+
         .upload-box {
           opacity: 1;
           right: -13px;
           bottom: -98px;
         }
       }
+
       .upload-title {
         font-size: 14px;
         color: #ffffff;
@@ -1237,10 +1261,11 @@ export default {
           transform: translateY(-50%);
         }
       }
+
       .upload-box {
         width: 125px;
         background: #FFFFFF;
-        box-shadow: 0 6px 24px 0 rgba(0,0,0,0.1148);
+        box-shadow: 0 6px 24px 0 rgba(0, 0, 0, 0.1148);
         border-radius: 5px;
         position: absolute;
         right: -13px;
