@@ -41,6 +41,17 @@
       </el-upload>
       <div class="drawer-item drawer-item-first">
         <div class="drawer-item-row">
+          <div class="drawer-text">重名处理</div>
+          <div class="drawer-select">
+            <el-radio-group v-model="metadata.cover">
+              <el-radio label="false">保留</el-radio>
+              <el-radio label="true">替换</el-radio>
+            </el-radio-group>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-item">
+        <div class="drawer-item-row">
           <div class="drawer-text">资产来源</div>
           <div class="drawer-select">
             <el-select v-model="metadata.source" popper-class="select-for-zte" class="select-list-item">
@@ -197,7 +208,8 @@ export default {
         recommend: 'false',
         expires: '',
         rights: '',
-        tags: []
+        tags: [],
+        cover: 'false'
       }
     }
   },
@@ -230,6 +242,7 @@ export default {
       flag && this.handleTags()
     },
     handleClose () {
+      this.$emit('close', this.uploaded)
       this.fileList = []
       this.uploaded = false
       const flag = {
@@ -239,10 +252,10 @@ export default {
         recommend: 'false',
         expires: '',
         rights: '',
-        tags: []
+        tags: [],
+        cover: 'false'
       }
       this.metadata = { ...flag }
-      this.$emit('close')
     },
     handleDeleteTags (key) {
       const { tags } = this.metadata
@@ -285,7 +298,7 @@ export default {
       formData.set('dc:authorizationScope', this.metadata.authorizationScope.join(';'))
       formData.set('dc:color', this.metadata.color)
       formData.set('tagPath', this.metadata.tags.join(';'))
-      formData.set('cover', 'true')
+      formData.set('cover', this.metadata.cover)
       const { token } = await getToken()
       axios({
         method: 'post',
@@ -426,6 +439,7 @@ export default {
 
   .tag-tag {
     display: flex;
+    flex-wrap: wrap;
     margin-top: 20px;
 
     .tag-item {

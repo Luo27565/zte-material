@@ -43,7 +43,8 @@
               </template>
               <template v-else>
                 <div v-for="item in multipleData" :key="item.assetId" class="multiple-list">
-                  <el-image class="image" v-if="item.renditions" :src="`${baseUrl}${item.renditions.column}`" fit="cover">
+                  <el-image class="image" v-if="item.renditions" :src="`${baseUrl}${item.renditions.column}`"
+                            fit="cover">
                     <div slot="error" class="image-slot">
                       <i class="el-icon-document" style="font-size: 20px;color: #323232"></i>
                     </div>
@@ -62,8 +63,11 @@
                         <div class="title-item">
                         </div>
                         <el-form label-position="top" ref="metadataForm" :model="metadata" :rules="metadataFormRules">
-                          <el-form-item label="文件名称" prop="title">
+                          <el-form-item label="文件标题" prop="title">
                             <el-input v-model.trim="metadata.title"></el-input>
+                          </el-form-item>
+                          <el-form-item label="文件名称">
+                            <el-input disabled v-model="name"></el-input>
                           </el-form-item>
                           <el-form-item label="版权所有者">
                             <el-input v-model="metadata.copyrightOwner"></el-input>
@@ -74,6 +78,16 @@
                               v-model="metadata.expires"
                               type="datetime"
                               :value-format="dateValueFormat"/>
+                          </el-form-item>
+                          <el-form-item label="版权类型">
+                            <el-select style="width: 100%" v-model="metadata.rights">
+                              <el-option
+                                v-for="item in typeOfCopyrightOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
                           </el-form-item>
                           <el-form-item label="资产来源">
                             <el-select style="width: 100%" v-model="metadata.source">
@@ -118,6 +132,36 @@
                             <el-select style="width: 100%" v-model="iptcExtension.portrait">
                               <el-option
                                 v-for="item in portraitOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="构图">
+                            <el-select style="width: 100%" v-model="metadata.composition">
+                              <el-option
+                                v-for="item in compositionOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="是否推荐">
+                            <el-select style="width: 100%" v-model="metadata.recommended">
+                              <el-option
+                                v-for="item in whetherRecommendedOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                              </el-option>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="色彩">
+                            <el-select style="width: 100%" v-model="metadata.color">
+                              <el-option
+                                v-for="item in colorOptions"
                                 :key="item.value"
                                 :label="item.label"
                                 :value="item.value">
@@ -172,7 +216,8 @@
                           <el-form-item label="封面图" v-show="metadata.type==='video/mp4'">
                             <div class="cover-image">
                               <el-input class="input" v-model="senior.coverImage"></el-input>
-                              <div class="icon" @click="handleBtn('el-icon-coverImage')"><i class="el-icon-folder-opened"/>
+                              <div class="icon" @click="handleBtn('el-icon-coverImage')"><i
+                                class="el-icon-folder-opened"/>
                               </div>
                             </div>
                           </el-form-item>
@@ -435,7 +480,13 @@ import {
   portraitOptions,
   minorModelImageDisclosureOptions,
   releaseOptions,
-  digitalSourceTypeOptions, sourceOptions, propertyReleaseStatusOptions, authorizationScopeCheckBox, fileTypeOptions
+  digitalSourceTypeOptions,
+  sourceOptions,
+  propertyReleaseStatusOptions,
+  authorizationScopeCheckBox,
+  fileTypeOptions,
+  compositionOptions,
+  whetherRecommendedOptions, colorOptions, typeOfCopyrightOptions
 } from '@/utils'
 import {
   addTag,
@@ -511,9 +562,13 @@ export default {
       baseUrl,
       fileTypeOptions,
       portraitOptions,
+      compositionOptions,
       minorModelImageDisclosureOptions,
+      whetherRecommendedOptions,
+      colorOptions,
       releaseOptions,
       sourceOptions,
+      typeOfCopyrightOptions,
       digitalSourceTypeOptions,
       propertyReleaseStatusOptions,
       authorizationScopeCheckBox,
@@ -639,7 +694,11 @@ export default {
         numberAudioChannels: '',
         pdfTitle: '',
         onTime: '',
-        offTime: ''
+        offTime: '',
+        recommended: '',
+        color: '',
+        rights: '',
+        composition: ''
         // sort: ''
         // downloadStatistics: 0
       },
@@ -780,6 +839,10 @@ export default {
         this.metadata.width = results.metadata['tiff:ImageWidth']
         this.metadata.offTime = results.properties.offTime
         this.metadata.onTime = results.properties.onTime
+        this.metadata.recommended = results.metadata['dc:recommend']
+        this.metadata.color = results.metadata['dc:color']
+        this.metadata.rights = results.metadata['dc:rights']
+        this.metadata.composition = results.metadata['dc:composition']
         // this.metadata.sort = results.metadata['dc:sort']
         // this.metadata.downloadStatistics = (results.metadata['dc:download'] || '0')
         this.senior.downloadStatistics = (results.metadata['dc:download'] || '0')
@@ -1002,6 +1065,10 @@ export default {
         // metadata['dc:source'] = this.iptcExtension.source
         metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
         metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+        metadata['dc:recommend'] = this.metadata.recommended
+        metadata['dc:color'] = this.metadata.color
+        metadata['dc:rights'] = this.metadata.rights
+        metadata['dc:composition'] = this.metadata.composition
         // metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
         for (const key in metadata) {
           !metadata[key] && delete metadata[key]
@@ -1086,6 +1153,10 @@ export default {
       // this.detailData.metadata['dc:source'] = this.iptcExtension.source
       this.detailData.metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
       this.detailData.metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+      this.detailData.metadata['dc:recommend'] = this.metadata.recommended
+      this.detailData.metadata['dc:color'] = this.metadata.color
+      this.detailData.metadata['dc:rights'] = this.metadata.rights
+      this.detailData.metadata['dc:composition'] = this.metadata.composition
       // this.detailData.metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
       // this.detailData.metadata['dc:download'] = this.metadata.downloadStatistics
       this.$refs.metadataForm[0].validate(async valid => {
@@ -1174,9 +1245,11 @@ export default {
   /deep/ .el-drawer__body {
     overflow: hidden;
   }
+
   .drawer-top {
-    background-color:#ffffff;
+    background-color: #ffffff;
     border-bottom: 1px solid #D8D8D8;
+
     .drawer-top-cnt {
       display: flex;
       align-items: center;
@@ -1192,6 +1265,7 @@ export default {
 
     .top-btn {
       display: flex;
+
       .btn {
         display: inline-block;
         height: 32px;
@@ -1202,7 +1276,7 @@ export default {
         position: relative;
         -webkit-transition: .3s ease-out;
         transition: .3s ease-out;
-        margin-right: 12px!important;
+        margin-right: 12px !important;
         font-size: 16px;
         color: #222222;
 
@@ -1222,7 +1296,7 @@ export default {
         }
 
         &.top-attribute {
-          i{
+          i {
             width: 30px;
             height: 27px;
             left: 6px;
@@ -1230,8 +1304,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-move {
-          i{
+          i {
             width: 28px;
             height: 26px;
             left: 7px;
@@ -1239,8 +1314,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-download {
-          i{
+          i {
             width: 28px;
             height: 25px;
             left: 7px;
@@ -1248,8 +1324,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-paperclip {
-          i{
+          i {
             width: 27px;
             height: 25px;
             left: 7px;
@@ -1257,8 +1334,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-scissors {
-          i{
+          i {
             width: 26px;
             height: 25px;
             left: 7px;
@@ -1285,6 +1363,7 @@ export default {
       -webkit-transition: .3s ease-out;
       transition: .3s ease-out;
       cursor: pointer;
+
       &:hover {
         background: #ECFAFF;
         color: #000000;
@@ -1310,6 +1389,7 @@ export default {
       transition: .3s ease-out;
       cursor: pointer;
       background: #008ED3;
+
       &:hover {
         opacity: 0.5;
       }
@@ -1319,6 +1399,7 @@ export default {
   .drawer-bottom-wrap {
     height: calc(100vh - 128px);
     overflow-y: auto;
+
     &::-webkit-scrollbar {
       width: 6px;
     }
@@ -1327,6 +1408,7 @@ export default {
       background: #ccc;
       border-radius: 5px;
     }
+
     .drawer-bottom {
       width: 1314px;
       max-width: 100%;
@@ -1398,6 +1480,7 @@ export default {
             .left-name-wrap {
               padding-top: 18px;
               background-color: #FFFFFF;
+
               .left-name {
                 display: block;
                 box-sizing: border-box;
@@ -1428,6 +1511,7 @@ export default {
             .cnt-wrap {
               border-top: 1px solid #D8D8D8;
               padding-top: 36px;
+
               &:first-child {
                 border-top: 0;
                 padding-top: 0;
@@ -1441,6 +1525,7 @@ export default {
               padding-left: 8px;
               position: relative;
               font-weight: 700;
+
               &:before {
                 content: '';
                 display: inline-block;
@@ -1455,6 +1540,7 @@ export default {
 
             .info-list-wrap {
               padding-top: 32px;
+
               .info-list-item {
                 width: 100%;
 
@@ -1489,6 +1575,7 @@ export default {
                         border: 1px solid #EDEDED;
                         border-radius: 8px;
                       }
+
                       .el-textarea__inner {
                         &::-webkit-scrollbar {
                           width: 6px;
@@ -1518,8 +1605,9 @@ export default {
 
                   .input {
                     flex: 1;
+
                     /deep/ .el-input__inner {
-                      border-radius: 8px 0 0 8px!important;
+                      border-radius: 8px 0 0 8px !important;
                     }
                   }
 
@@ -1554,6 +1642,7 @@ export default {
                   color: #6d6d6d;
                   line-height: 20px;
                   padding-bottom: 12px;
+
                   h3 {
                     margin: 0;
                     font-weight: 400;
@@ -1816,6 +1905,7 @@ export default {
     margin-bottom: 12px;
   }
 }
+
 .el-drawer__wrapper {
   top: 64px;
 
@@ -1825,7 +1915,7 @@ export default {
 }
 
 .el-dialog__wrapper {
-  z-index: 2222!important;
+  z-index: 2222 !important;
   overflow: hidden;
 
   /deep/ .el-dialog__body {

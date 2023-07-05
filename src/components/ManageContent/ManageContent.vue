@@ -287,7 +287,7 @@
     </div>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
-    <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData" @close="showUpload = false"/>
+    <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData" @close="handleUploadDialog"/>
     <folderUpload :dialog-visible.sync="showFolderUpload" @finish="refresh" :exist-data="listViewData"/>
     <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
                    @move="handleDetailToMove"/>
@@ -727,6 +727,10 @@ export default {
       } else {
         this.showUploadBox = false
       }
+    },
+    handleUploadDialog (flag) {
+      flag && this.refresh()
+      this.showUpload = false
     }
   }
 }
