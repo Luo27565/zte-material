@@ -82,3 +82,6 @@ export const assetBatchEdit = data => post('/bin/zte/asset/batch/edit', JSON.str
 
 // 查询资产详情
 export const detailByAssetId = id => get(`/bin/zte/asset/id/detail?assetId=${id}`)
+
+// 多资产打包下载
+export const downloadZip = url => post(`${url}`, {}, true, true)

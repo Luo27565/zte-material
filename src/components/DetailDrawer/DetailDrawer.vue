@@ -59,26 +59,40 @@
                 <!--              </div>-->
                 <div class="info-btn">
                   <template v-if="downLoadBtn">
-                    <el-button style="width: 100%" type="primary" @click="handleDownload('original')">下载当前图片</el-button>
-                  </template>
-                  <template v-else>
-                    <el-button type="primary" style="width: 48%" @click="handleDownload('original')">下载当前图片</el-button>
-                    <el-button type="primary" style="width: 48%" @click="handleDownload('related')" class="associated-download">下载关联文件
-                      <!--              <i class="el-icon-arrow-down el-icon&#45;&#45;right"/>-->
+                    <el-button style="width: 100%" :disabled="isExpiresDisabled" type="primary" @click="handleDownload('original')">下载当前图片
                     </el-button>
                   </template>
+                  <template v-else>
+                    <el-button type="primary" :disabled="isExpiresDisabled" style="width: 48%"
+                               @click="handleDownload('original')">下载当前图片
+                    </el-button>
+                    <el-button type="primary" style="width: 48%" @click="handleDownload('related')"
+                               :disabled="isExpiresDisabled"
+                               class="associated-download">下载关联文件
+                      <i v-if="relateds.length>1" class="el-icon-arrow-down"/>
+                    </el-button>
+                  </template>
+                </div>
+                <div class="item-ul" v-if="isExpiresDisabled">
+                  <div class="item-li">
+                    <span style="color: #999999;">此素材已到期，请联系管理员</span>
+                  </div>
                 </div>
                 <div class="info-list-label">
                   <!--                <span>标签：</span>-->
                   <!--                {{ showTag(detailData.metadata['cq:tags']) }}-->
-                  <ul >
-                    <li v-for="(item, index) in showTag(detailData.metadata['cq:tags'])" :key="index"><span>{{ item }}</span></li>
+                  <ul>
+                    <li v-for="(item, index) in showTag(detailData.metadata['cq:tags'])" :key="index"><span>{{
+                        item
+                      }}</span></li>
                   </ul>
                 </div>
                 <div class="item-ul">
                   <div class="item-li" v-show="detailData.metadata['tiff:ImageWidth']">
                     <span class="item-li-title">尺寸：</span>
-                    <span>{{ `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}` }}</span>
+                    <span>{{
+                        `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}`
+                      }}</span>
                   </div>
                   <div class="item-li">
                     <span class="item-li-title">存储大小：</span>
@@ -120,16 +134,19 @@
     <list-dialog :visible.sync="visibleList" :file-path="detailData.path" :related-file-path="pathList" :name="nameList"
                  :detail-data="detailData"
                  @finish="getAsset(detailData.path)"/>
+    <down-load-list-dialog :visible.sync="visibleDown" :list="relateds" :zip-name="detailData.showName"/>
   </el-drawer>
 </template>
 
 <script>
 import { baseUrl } from '@/utils'
+import dayjs from 'dayjs'
 import '@/utils/filter'
 import { downloadByGet } from '@/api'
-import { assetDetail, checkRelated, detailByAssetId, searchPopularTag } from '@/api/api'
+import { assetDetail, checkRelated, searchPopularTag } from '@/api/api'
 import selectDialog from '@/components/SelectDialog/SelectDialog'
 import listDialog from '@/components/ListDialog/ListDialog'
+import DownLoadListDialog from '@/components/DownLoadListDialog/DownLoadListDialog'
 import { mapState } from 'pinia'
 import zteStore from '@/store'
 
@@ -137,7 +154,8 @@ export default {
   name: 'DetailDrawer',
   components: {
     selectDialog,
-    listDialog
+    listDialog,
+    DownLoadListDialog
   },
   props: {
     drawer: {
@@ -179,7 +197,7 @@ export default {
       return this.allDetailData.length
     },
     downLoadBtn: function () {
-      return !this.topBtn.find(e => e.icon === 'el-icon-scissors').show
+      return this.relateds.length === 0
     },
     videoOptions: function () {
       const flag = {
@@ -218,6 +236,8 @@ export default {
       baseUrl,
       visible: false,
       visibleList: false,
+      visibleDown: false,
+      isExpiresDisabled: false,
       pathList: '',
       nameList: '',
       topBtn: [
@@ -251,6 +271,7 @@ export default {
       index: 0,
       relatedData: {},
       detailData: {},
+      relateds: [],
       tags: {}
     }
   },
@@ -272,14 +293,24 @@ export default {
         showName: 'dc:title' in results.metadata ? results.metadata['dc:title'] || results.name : results.name,
         type: results.metadata['dc:format']
       }
-      if (results.metadata['dc:downloadManagement']) {
-        const res = await detailByAssetId(results.metadata['dc:downloadManagement'])
-        this.relatedData = { ...res.results }
+      if (results.metadata && 'prism:expirationDate' in results.metadata) {
+        this.isExpiresDisabled = dayjs().isAfter(dayjs(results.metadata['prism:expirationDate']))
+      } else {
+        this.isExpiresDisabled = false
       }
-      this.topBtn = [...this.topBtn.map(e => ({
-        ...e,
-        show: e.icon === 'el-icon-scissors' ? !!('dc:downloadManagement' in results.metadata && results.metadata['dc:downloadManagement']) : e.show
-      }))]
+      if (Object.keys(results.related || {}).length) {
+        let arr = []
+        for (const key in results.related) {
+          arr = [...arr, { ...results.related[key] }]
+        }
+        this.relateds = arr
+      } else {
+        this.relateds = []
+      }
+      // if (results.metadata['dc:downloadManagement']) {
+      //   const res = await detailByAssetId(results.metadata['dc:downloadManagement'])
+      //   this.relatedData = { ...res.results }
+      // }
     },
     closeDrawer () {
       this.$emit('update:drawer', false)
@@ -324,7 +355,6 @@ export default {
           column
         }
       } = this.detailData
-      console.log(path)
       type === 'original' && downloadByGet(`${path}`, name)
       type === 'detail' && downloadByGet(`${detail}`, name)
       type === 'card' && downloadByGet(`${card}`, name)
@@ -351,7 +381,13 @@ export default {
       // const { name } = this.relatedData[Object.keys(this.relatedData)[0]]
       // const path = this.detailData.metadata['dc:downloadManagement']
       // const { results: { name } } = await assetDetail(encodeURIComponent(path))
-      await downloadByGet(`${this.relatedData.path}`, this.relatedData.name)
+      if (this.relateds.length === 1) {
+        const [flag] = this.relateds
+        await downloadByGet(`${flag['sling:resource']}`, flag.showName)
+      } else {
+        this.visibleDown = true
+      }
+      // await downloadByGet(`${this.relatedData.path}`, this.relatedData.name)
     },
     async handleRelate () {
       // const { name } = this.relatedData[Object.keys(this.relatedData)[0]]
@@ -384,8 +420,9 @@ export default {
   }
 
   .drawer-top {
-    background-color:#ffffff;
+    background-color: #ffffff;
     border-bottom: 1px solid #D8D8D8;
+
     .drawer-top-cnt {
       display: flex;
       align-items: center;
@@ -401,6 +438,7 @@ export default {
 
     .top-btn {
       display: flex;
+
       .btn {
         display: inline-block;
         height: 32px;
@@ -411,7 +449,7 @@ export default {
         position: relative;
         -webkit-transition: .3s ease-out;
         transition: .3s ease-out;
-        margin-right: 12px!important;
+        margin-right: 12px !important;
         font-size: 16px;
         color: #222222;
 
@@ -431,7 +469,7 @@ export default {
         }
 
         &.top-attribute {
-          i{
+          i {
             width: 30px;
             height: 27px;
             left: 6px;
@@ -439,8 +477,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-move {
-          i{
+          i {
             width: 28px;
             height: 26px;
             left: 7px;
@@ -448,8 +487,9 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-paperclip {
-          i{
+          i {
             width: 27px;
             height: 25px;
             left: 7px;
@@ -457,9 +497,11 @@ export default {
             background-size: cover;
           }
         }
+
         &.top-scissors {
           display: none;
-          i{
+
+          i {
             width: 26px;
             height: 25px;
             left: 7px;
@@ -486,6 +528,7 @@ export default {
       -webkit-transition: .3s ease-out;
       transition: .3s ease-out;
       cursor: pointer;
+
       &:hover {
         background: #ECFAFF;
         color: #000000;
@@ -493,9 +536,11 @@ export default {
       }
     }
   }
+
   .drawer-bottom-wrap {
     height: calc(100vh - 128px);
     overflow-y: auto;
+
     &::-webkit-scrollbar {
       width: 6px;
     }
@@ -504,6 +549,7 @@ export default {
       background: #ccc;
       border-radius: 5px;
     }
+
     .drawer-bottom {
       width: 1314px;
       max-width: 100%;
@@ -518,6 +564,7 @@ export default {
         overflow: hidden;
         padding: 2.2917vw 1.6667vw 2.2917vw 2.8125vw;
       }
+
       .info-item {
         display: flex;
         justify-content: space-between;
@@ -556,7 +603,7 @@ export default {
             &.disable {
               color: #666666;
               cursor: default;
-              pointer-events:none;
+              pointer-events: none;
             }
           }
 
@@ -581,7 +628,7 @@ export default {
             &.disable {
               color: #666666;
               cursor: default;
-              pointer-events:none;
+              pointer-events: none;
             }
           }
         }
@@ -606,6 +653,7 @@ export default {
           /deep/ .el-image {
             width: 100%;
             height: 100%;
+
             img {
               max-height: 500px;
             }
@@ -640,6 +688,7 @@ export default {
             display: flex;
             align-items: center;
             margin: 0 -5px;
+
             /deep/ .el-button {
               -webkit-box-flex: 0;
               -webkit-flex: 0 0 50%;
@@ -677,6 +726,7 @@ export default {
           .list-item {
             line-height: 1.8rem;
             font-size: 14px;
+
             .info-list-title {
               font-size: 24px;
               font-weight: 500;
@@ -689,12 +739,15 @@ export default {
                 margin: 0;
                 padding: 20px 0 0;
                 list-style: none;
+
                 &:empty {
                   display: none;
                 }
+
                 li {
                   display: inline-block;
                   padding: 4px 12px 4px 0;
+
                   span {
                     display: inline-block;
                     height: 28px;
@@ -714,21 +767,26 @@ export default {
 
             .item-ul {
               padding-top: 24px;
+
               .item-li {
                 display: flex;
                 line-height: 0;
                 margin-bottom: 24px;
+
                 &:last-child {
                   margin-bottom: 0;
                 }
+
                 &.dec-wrap {
                   align-items: center;
                 }
+
                 span {
                   font-size: 14px;
                   line-height: 20px;
                   color: #444444;
                 }
+
                 .item-li-title {
                   -webkit-box-flex: 100px;
                   -webkit-flex: 0 0 100px;
@@ -756,9 +814,9 @@ export default {
 }
 
 .el-dialog__wrapper {
-  z-index: 2222!important;
+  z-index: 2222 !important;
   overflow: hidden;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
 
   /deep/ .el-dialog__body {
     .content {

@@ -46,7 +46,9 @@ import {
   Tag,
   Collapse,
   CollapseItem,
-  Divider
+  Divider,
+  RadioGroup,
+  Radio
 } from 'element-ui'
 // @ts-ignore
 import VueVideoPlayer from 'vue-video-player'
@@ -98,6 +100,8 @@ Vue.use(CollapseItem)
 Vue.use(Collapse)
 Vue.use(Divider)
 Vue.use(Directives)
+Vue.use(RadioGroup)
+Vue.use(Radio)
 
 Vue.prototype.$msgbox = MessageBox
 Vue.prototype.$alert = MessageBox.alert

@@ -1,32 +1,40 @@
 <template>
   <el-dialog :visible="visible" :show-close="false" :title="title" @close="handleClose" :modal-append-to-body="true"
+             @open="handleOpen"
              :append-to-body="true" width="320px" class="disassociation-box">
     <div class="content">
-      <div class="item">
+      <el-checkbox v-model="selectAll" @change="handleAll">全选</el-checkbox>
+      <div class="item" v-for="(item,index) in listData" :key="index">
+        <el-checkbox v-model="item.isSelect"></el-checkbox>
         <div class="img">
-          <el-image :src="`${baseUrl}${relatedFilePath}`"
-                    :preview-src-list="[`${baseUrl}${relatedFilePath}`]">
+          <el-image :src="`${baseUrl}${item['sling:resource']}`"
+                    :preview-src-list="[`${baseUrl}${item['sling:resource']}`]">
             <div slot="error" class="image-slot">
               <i class="el-icon-document" style="font-size: 24px"></i>
             </div>
           </el-image>
         </div>
-        <div class="name">{{ name }}</div>
+        <div class="name">{{ item.showName }}</div>
+        <i @click="handleDown(index)" title="下载" class="el-icon-download download-icon"/>
       </div>
     </div>
     <div slot="footer">
       <el-button @click="handleClose">取 消</el-button>
-      <el-button type="primary" @click="handleRelate" class="disassociation-btn" :loading="loading">取消关联</el-button>
+      <el-button type="primary" @click="handleDownLoad" :disabled="!btn" class="disassociation-btn" v-loading="loading">
+        下
+        载
+      </el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
 import { baseUrl } from '@/utils'
-import { assetEdit, unrelatedAsset } from '@/api/api'
+import { downloadZip } from '@/api/api'
+import { downloadByGet } from '@/api'
 
 export default {
-  name: 'ListDialog',
+  name: 'DownLoadListDialog',
   props: {
     visible: {
       type: Boolean,
@@ -34,89 +42,78 @@ export default {
     },
     title: {
       type: String,
-      default: '删除关联'
+      default: '关联文件列表'
     },
-    filePath: {
+    list: {
+      type: Array,
+      default: () => []
+    },
+    zipName: {
       type: String,
       default: ''
-    },
-    name: {
-      type: String,
-      default: ''
-    },
-    relatedFilePath: {
-      type: String,
-      default: ''
-    },
-    editByAEM: {
-      type: Boolean,
-      default: false
-    },
-    detailData: {
-      type: Object,
-      default: () => ({})
-    },
-    relatedFileNodeId: {
-      type: String,
-      default: ''
+    }
+  },
+  computed: {
+    btn () {
+      return this.listData.some(i => i.isSelect)
     }
   },
   data () {
     return {
       baseUrl,
-      loading: false
+      loading: false,
+      listData: [],
+      selectAll: false
+    }
+  },
+  watch: {
+    listData: {
+      handler () {
+        this.selectAll = this.listData.every(i => i.isSelect)
+      },
+      deep: true
     }
   },
   methods: {
+    handleOpen () {
+      this.listData = [...this.list.map(e => ({
+        ...e,
+        isSelect: false
+      }))]
+    },
     handleClose () {
       this.$emit('update:visible', false)
     },
-    async handleRelate () {
-      if (this.editByAEM) {
-        const formData = new FormData()
-        formData.append('filePath', this.filePath)
-        formData.append('relatedFileNodeId', this.relatedFileNodeId)
+    async handleDown (index) {
+      const flag = this.list[index]
+      await downloadByGet(`${flag['sling:resource']}`, flag.showName)
+    },
+    handleAll (val) {
+      this.listData = [...this.listData.map(i => ({
+        ...i,
+        isSelect: val
+      }))]
+    },
+    async handleDownLoad () {
+      try {
         this.loading = true
-        try {
-          const {
-            success,
-            status
-          } = await unrelatedAsset(formData)
-          if (success && status === 200) {
-            this.$message({
-              message: '取消关联成功',
-              type: 'success'
-            })
-            this.$emit('finish')
-            this.handleClose()
-          } else {
-            this.$message.error('取消关联失败')
-          }
-        } finally {
-          this.loading = false
+        const flag = this.listData.filter(i => i.isSelect)
+        if (flag.length === 1) {
+          await downloadByGet(`${flag[0]['sling:resource']}`, flag[0].showName)
+        } else {
+          const str = flag.map(i => `path=${i['sling:resource']}`).join('&')
+          const res = await downloadZip(`${flag[0]['sling:resource']}.assetdownload.zip/zte.zip?${str}&_charset_=utf-8&downloadAssets=true&licenseCheck=false&flatStructure=true&downloadRenditions=false&downloadSubassets=false`)
+          const url = window.URL.createObjectURL(res)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${this.zipName}关联文件.zip`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
         }
-      } else {
-        this.loading = true
-        const flag = { ...this.detailData }
-        flag.metadata['dc:downloadManagement'] = ''
-        try {
-          const {
-            status,
-            success
-          } = await assetEdit({ ...flag })
-          if (success && status === 200) {
-            this.$message({
-              message: '取消关联成功',
-              type: 'success'
-            })
-            this.$emit('finish')
-            this.handleClose()
-          } else {
-            this.$message.error('取消关联失败')
-          }
-        } finally {
-          this.loading = false
-        }
+      } finally {
+        this.loading = false
       }
     }
   }
@@ -186,6 +183,7 @@ export default {
           align-items: center;
 
           .img {
+            margin-left: 12px;
             width: 3rem;
             height: 3rem;
             display: flex;
@@ -194,7 +192,13 @@ export default {
           }
 
           .name {
+            flex: 1;
             padding: 0 .625rem;
+          }
+
+          .download-icon {
+            cursor: pointer;
+            font-size: 18px;
           }
         }
       }

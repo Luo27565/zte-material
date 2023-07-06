@@ -1,6 +1,6 @@
 <template>
   <el-dialog :visible="visible" @close="handleClose" :modal-append-to-body="true" :append-to-body="true"
-             :show-close="false" @open="init" width="75%">
+             :show-close="false" @open="init" width="75%" class="select-box">
     <div class="container">
       <div class="top-btn">
         <el-button @click="handleClose">取消</el-button>
@@ -117,6 +117,10 @@ export default {
     editByAEM: {
       type: Boolean,
       default: false
+    },
+    isGetData: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -182,11 +186,19 @@ export default {
       }
     },
     async handleRelate () {
-      this.loading = true
       const [{
         path,
+        name,
         assetId
       }] = this.$refs.table.selection
+      if (this.isGetData) {
+        this.$emit('finishSelect', {
+          path,
+          name
+        })
+        return
+      }
+      this.loading = true
       if (this.editByAEM) {
         const formData = new FormData()
         formData.append('filePath', this.path)
@@ -229,6 +241,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.select-box {
+  z-index: 2999 !important;
+}
+
 /deep/ .el-dialog {
   margin-top: 5vh !important;
 }

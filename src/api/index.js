@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken } from '@/api/api'
 import { baseUrl } from '@/utils'
 
-// document.cookie = 'login-token=28314397-c981-410f-9d33-3959f006cd8d%3a72b81f4e-0872-4d8a-80b4-93c3dcd757cc_cf7709c38a4ca81c499dc3c06e5a8635%3acrx.default;path=/'
+document.cookie = 'login-token=28314397-c981-410f-9d33-3959f006cd8d%3acac701cb-0b46-4f34-a381-bd29e2d2fd0e_2d64c2203b4ba0acb7a164be725eb015%3acrx.default;path=/'
 const service = axios.create({
   baseURL: baseUrl,
   withCredentials: true,
@@ -26,10 +26,16 @@ const setToken = async () => {
   return token
 }
 
-export const post = async (url, params, contentType = true) => {
+export const post = async (url, params, contentType = true, isBlob = false) => {
   const token = await setToken()
   return new Promise((resolve, reject) => {
-    service.post(url, params, {
+    service.post(url, params, isBlob ? {
+      headers: {
+        'Content-Type': contentType ? 'application/x-www-form-urlencoded' : 'application/json',
+        'CSRF-Token': token
+      },
+      responseType: 'blob'
+    } : {
       headers: {
         'Content-Type': contentType ? 'application/x-www-form-urlencoded' : 'application/json',
         'CSRF-Token': token

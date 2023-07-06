@@ -1,6 +1,6 @@
 // baseUrl /aem
 // export const baseUrl = '/aem'
-export const baseUrl = ''
+export const baseUrl = '/aem'
 
 // 素材管理tag的路径
 export const assetManagementUrl = '/content/cq:tags/popular-tags'
@@ -233,4 +233,64 @@ export const showOptions = [{
 }, {
   label: '文件和文件夹',
   value: 'fileAndFolder'
+}]
+
+// 色彩
+export const colorOptions = [{
+  label: '红色系列',
+  value: 'red'
+}, {
+  label: '橙色系列',
+  value: 'orange'
+}, {
+  label: '黄色系列',
+  value: 'yellow'
+}, {
+  label: '绿色系列',
+  value: 'green'
+}, {
+  label: '青色系列',
+  value: 'cyan'
+}, {
+  label: '蓝色系列',
+  value: 'blue'
+}, {
+  label: '紫色系列',
+  value: 'purple'
+}, {
+  label: '黑白系列',
+  value: 'blackAndWhite'
+}]
+
+// 是否推荐
+export const whetherRecommendedOptions = [{
+  label: '否',
+  value: 'false'
+}, {
+  label: '是',
+  value: 'true'
+}]
+
+// 版权类型
+export const typeOfCopyrightOptions = [{
+  label: '全用途',
+  value: 'all'
+}, {
+  label: '媒体用途',
+  value: 'media'
+}]
+
+// 构图
+export const compositionOptions = [{
+  label: '横图',
+  value: '1'
+}, {
+  label: '竖图',
+  value: '2'
+}, {
+  label: '方图',
+  value: '3'
+}, {
+  label: '',
+  value: ''
 }]

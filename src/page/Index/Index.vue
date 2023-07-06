@@ -122,9 +122,14 @@ export default {
 }
 </style>
 <style lang="scss">
-.el-image-viewer__wrapper {
-  z-index: 2103!important;
+.el-message {
+  z-index: 5000 !important;
 }
+
+.el-image-viewer__wrapper {
+  z-index: 3103 !important;
+}
+
 .el-aside::-webkit-scrollbar {
   width: 10px;
 }
@@ -133,10 +138,29 @@ export default {
   background: #ccc; // 滑块颜色
   border-radius: 5px; // 滑块圆角
 }
+
 .el-picker-panel {
-  z-index: 2222!important;
+  z-index: 2222 !important;
 }
+
 .el-drawer__wrapper {
   top: 64px;
+}
+
+.el-tooltip__popper {
+  z-index: 50001 !important;
+}
+
+.my-popper {
+  background-color: rgb(250, 115, 105) !important;
+  color: #222222 !important;
+}
+
+.el-tooltip__popper[x-placement^=bottom] .popper__arrow:after {
+  border-bottom-color: rgb(250, 115, 105);
+}
+
+.el-tooltip__popper[x-placement^=bottom] .popper__arrow {
+  border-bottom-color: rgb(250, 115, 105);
 }
 </style>

@@ -108,10 +108,11 @@
             <!--          <el-button v-permission="assetRole" type="primary" size="mini" @click="showUpload=true" class="btn">-->
             <!--            <div class="button"><i class="el-icon-upload search-icon"/>上传</div>-->
             <!--          </el-button>-->
-            <el-button v-permission="assetRole" type="primary" size="mini" class="btn all-btn" @click="handleAllSelect">
+            <el-button type="primary" size="mini" class="btn all-btn" @click="handleAllSelect">
               <div class="button"><i class="el-icon-circle-check search-icon"/>全选</div>
             </el-button>
-            <el-dropdown v-show="showSettingBtn()" :hide-on-click="false" class="btn" style="margin-left: 10px;"
+            <el-dropdown v-permission="assetRole" v-show="showSettingBtn()" :hide-on-click="false" class="btn"
+                         style="margin-left: 10px;"
                          @command="handleSettingCommand">
               <el-button type="primary" size="mini" class="btn operate-btn">
                 操作<i class="el-icon-arrow-down el-icon--right"></i>
@@ -120,6 +121,10 @@
                 <el-dropdown-item v-for="item in settingBtn" :key="item.icon" :icon="item.icon" v-show="item.show"
                                   :command="item.icon">
                   {{ item.label }}
+                </el-dropdown-item>
+                <el-dropdown-item icon="el-icon-download" v-show="showDownloadBox"
+                                  command="download">
+                  下载
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
@@ -133,8 +138,15 @@
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
-            <div class="upload-wrap" :class="showUploadBox? 'active':''">
+            <div class="upload-wrap" v-permission="assetRole" :class="showUploadBox? 'active':''">
               <div class="upload-title" @click="showUpload=true">上传</div>
+              <div class="upload-box">
+                <span class="upload-file" @click="showUpload=true,showUploadBox=false">上传文件</span>
+                <span class="upload-folder" @click="showFolderUpload=true, showUploadBox=false">文件夹上传</span>
+              </div>
+            </div>
+            <div class="download-wrap" v-permission="!assetRole" v-if="showDownloadBox">
+              <div class="upload-title" @click="handleDownload">下载</div>
               <div class="upload-box">
                 <span class="upload-file" @click="showUpload=true,showUploadBox=false">上传文件</span>
                 <span class="upload-folder" @click="showFolderUpload=true, showUploadBox=false">文件夹上传</span>
@@ -156,7 +168,6 @@
             <el-table-column
               type="selection"
               align="center"
-              v-if="assetRole"
               width="36">
             </el-table-column>
             <el-table-column width="56" align="center">
@@ -174,19 +185,21 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column
-              prop="name"
-              label="名称">
-            </el-table-column>
+            <!--            <el-table-column-->
+            <!--              prop="name"-->
+            <!--              label="名称">-->
+            <!--            </el-table-column>-->
             <!--            width="240"-->
             <el-table-column
-              label="标题">
+              label="标题/名称">
               <template slot-scope="scope">
                 <span
                   v-if="scope.row.metadata && ('jcr:title' in scope.row.metadata||'dc:title' in scope.row.metadata)">
-                  {{ scope.row.metadata['jcr:title'] || scope.row.metadata['dc:title'] }}
+                  {{ scope.row.metadata['jcr:title'] || scope.row.metadata['dc:title'] || scope.row.name }}
                 </span>
-                <span v-else>{{ scope.row.properties ? scope.row.properties['jcr:title'] : '' }}</span>
+                <span v-else>{{
+                    scope.row.properties ? scope.row.properties['jcr:title'] ? scope.row.properties['jcr:title'] : scope.row.name : scope.row.name
+                  }}</span>
               </template>
             </el-table-column>
             <el-table-column
@@ -237,6 +250,13 @@
                 </template>
               </template>
             </el-table-column>
+            <el-table-column label="到期状态" width="100">
+              <template slot-scope="scope">
+                <span v-if="scope.row.metadata&&'prism:expirationDate' in scope.row.metadata">{{
+                    scope.row.metadata['prism:expirationDate'] | expiresWhetherFormat
+                  }}</span>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
         <div v-show="dropDownValue==='el-icon-picture'">
@@ -247,51 +267,53 @@
         </div>
       </div>
 
-      <el-dialog width="360px" title="创建文件夹" :visible.sync="dialogAddFolderVisible" @close="folderDialogClose">
-        <el-form label-position="top" label-width="80px" :model="folderForm">
-          <el-form-item label="标题" :required="true">
-            <el-input v-model="folderForm.folderTitle" @input="handleFolderName"></el-input>
-          </el-form-item>
-          <el-tooltip :value="showPopover" :manual="true" popper-class="my-popper">
-            <div slot="content">资源已存在</div>
-            <el-form-item label="名称">
-              <el-input v-model="folderForm.folderName"></el-input>
-            </el-form-item>
-          </el-tooltip>
-          <el-form-item label="排序">
-            <el-date-picker
-              style="width: 100%;"
-              v-model="folderForm.sort"
-              type="datetime"
-              :value-format="dateValueFormat"
-              default-time="00:00:00">
-            </el-date-picker>
-          </el-form-item>
-        </el-form>
-        <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogAddFolderVisible = false">取 消</el-button>
-        <el-button type="primary" :disabled="!folderForm.folderTitle||!folderForm.folderName||showPopover"
-                   :loading="folderLoading"
-                   @click="createFolder">确 定</el-button>
-      </span>
-      </el-dialog>
-      <el-dialog width="320px" title="删除资产" :visible.sync="dialogDeleteFolderVisible" @open="handleDeleteDialog">
-        <div style="color: #222222">{{ deleteTitle }}</div>
-        <p style="max-height: 180px;overflow: auto;color: #222222" v-html="deleteContent"></p>
-        <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogDeleteFolderVisible = false">取 消</el-button>
-        <el-button type="danger" :loading="folderLoading"
-                   @click="deleteAsset">删 除</el-button>
-      </span>
-      </el-dialog>
+      <!--      <el-dialog width="360px" title="创建文件夹" :visible.sync="dialogAddFolderVisible" @close="folderDialogClose">-->
+      <!--        <el-form label-position="top" label-width="80px" :model="folderForm">-->
+      <!--          <el-form-item label="标题" :required="true">-->
+      <!--            <el-input v-model="folderForm.folderTitle" @input="handleFolderName"></el-input>-->
+      <!--          </el-form-item>-->
+      <!--          <el-tooltip :value="showPopover" :manual="true" popper-class="my-popper">-->
+      <!--            <div slot="content">资源已存在</div>-->
+      <!--            <el-form-item label="名称">-->
+      <!--              <el-input v-model="folderForm.folderName"></el-input>-->
+      <!--            </el-form-item>-->
+      <!--          </el-tooltip>-->
+      <!--          <el-form-item label="排序">-->
+      <!--            <el-date-picker-->
+      <!--              style="width: 100%;"-->
+      <!--              v-model="folderForm.sort"-->
+      <!--              type="datetime"-->
+      <!--              :value-format="dateValueFormat"-->
+      <!--              default-time="00:00:00">-->
+      <!--            </el-date-picker>-->
+      <!--          </el-form-item>-->
+      <!--        </el-form>-->
+      <!--        <span slot="footer" class="dialog-footer">-->
+      <!--        <el-button @click="dialogAddFolderVisible = false">取 消</el-button>-->
+      <!--        <el-button type="primary" :disabled="!folderForm.folderTitle||!folderForm.folderName||showPopover"-->
+      <!--                   :loading="folderLoading"-->
+      <!--                   @click="createFolder">确 定</el-button>-->
+      <!--      </span>-->
+      <!--      </el-dialog>-->
+      <!--      <el-dialog width="320px" title="删除资产" :visible.sync="dialogDeleteFolderVisible" @open="handleDeleteDialog">-->
+      <!--        <div style="color: #222222">{{ deleteTitle }}</div>-->
+      <!--        <p style="max-height: 180px;overflow: auto;color: #222222" v-html="deleteContent"></p>-->
+      <!--        <span slot="footer" class="dialog-footer">-->
+      <!--        <el-button @click="dialogDeleteFolderVisible = false">取 消</el-button>-->
+      <!--        <el-button type="danger" :loading="folderLoading"-->
+      <!--                   @click="deleteAsset">删 除</el-button>-->
+      <!--      </span>-->
+      <!--      </el-dialog>-->
     </div>
+    <CreateFolderDialog :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id"/>
+    <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="hasSelectData" @finish="deleteAsset"/>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
     <upload :dialog-visible.sync="showUpload" @finish="refresh" :exist-data="listViewData" @close="handleUploadDialog"/>
     <folderUpload :dialog-visible.sync="showFolderUpload" @finish="refresh" :exist-data="listViewData"/>
     <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
                    @move="handleDetailToMove"/>
-    <div style="display: none" v-html="errorData"></div>
+    <!--    <div style="display: none" v-html="errorData"></div>-->
   </div>
 
 </template>
@@ -302,15 +324,16 @@ import drawer from '@/components/Drawer/Drawer'
 import upload from '@/components/Upload/Upload'
 import folderUpload from '@/components/FolderUpload/FolderUpload.vue'
 import detailDrawer from '@/components/DetailDrawer/DetailDrawer'
+import DeleteDialog from '@/components/DeleteDialog/DeleteDialog'
+import CreateFolderDialog from '@/components/CreateFolderDialog/CreateFolderDialog'
 import zteStore from '@/store'
 import { mapState, mapActions } from 'pinia'
 import {
   getTree,
-  command,
   getJSON,
   folderTree,
   searchPopularTag,
-  createFolderByAem
+  createFolderByAem, downloadZip
 } from '@/api/api'
 import {
   columnPath,
@@ -324,6 +347,7 @@ import '@/utils/filter'
 import dayjs from 'dayjs'
 import isBetween from 'dayjs/plugin/isBetween'
 import utc from 'dayjs/plugin/utc'
+import { downloadByGet } from '@/api'
 
 dayjs.extend(isBetween)
 dayjs.extend(utc)
@@ -335,7 +359,9 @@ export default {
     drawer,
     upload,
     detailDrawer,
-    folderUpload
+    folderUpload,
+    DeleteDialog,
+    CreateFolderDialog
   },
   computed: {
     ...mapState(zteStore, ['assetRole', 'selected', 'breadcrumb', 'lastCrumb']),
@@ -412,6 +438,7 @@ export default {
       showFolderUpload: false,
       showUpdateTime: false,
       showUploadBox: false,
+      showDownloadBox: false,
       showAuthorizationDuration: false,
       dateValueFormat: 'yyyy-MM-dd HH:mm:ss',
       drawerTitle: 'move',
@@ -503,17 +530,18 @@ export default {
       folderLoading: false,
       folderJson: [],
       dialogDeleteFolderVisible: false,
-      deleteTitle: '',
-      deleteContent: ''
+      hasSelectData: []
     }
   },
   methods: {
     ...mapActions(zteStore, ['setBreadcrumb', 'setSelected', 'getTreeData']),
     handleSettingCommand (command) {
+      command === 'el-icon-delete' && (this.hasSelectData = this.$refs.table.selection)
       command === 'el-icon-delete' && (this.dialogDeleteFolderVisible = true)
       command === 'el-icon-position' && this.handleRemove()
       command === 'el-icon-copy-document' && this.handleCopy()
       command === 'el-icon-info' && this.handleJump()
+      command === 'download' && this.handleDownload()
       // console.log(command)
     },
     handleJump () {
@@ -529,6 +557,30 @@ export default {
           path: this.$refs.table.selection.length === 1 ? flag.path : 'multipleData'
         }
       })
+    },
+    async handleDownload () {
+      try {
+        this.loading = true
+        const length = this.$refs.table.selection.length
+        const [flag] = this.$refs.table.selection
+        if (length === 1) {
+          const name = flag.metadata && ('dc:title' in flag.metadata) ? flag.metadata['dc:title'] : flag.name
+          await downloadByGet(`${flag.path}`, name)
+        } else {
+          const str = this.$refs.table.selection.map(i => `path=${i.path}`).join('&')
+          const res = await downloadZip(`${flag.path}.assetdownload.zip/zte.zip?${str}&_charset_=utf-8&downloadAssets=true&licenseCheck=false&flatStructure=true&downloadRenditions=false&downloadSubassets=false`)
+          const url = window.URL.createObjectURL(res)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = '文件下载.zip'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
+        }
+      } finally {
+        this.loading = false
+      }
     },
     handleCommand (command) {
       if (command !== this.dropDownValue) {
@@ -573,9 +625,6 @@ export default {
     },
     createFolderDialog () {
       this.dialogAddFolderVisible = true
-    },
-    handleFolderName () {
-      this.folderForm.folderName = this.folderForm.folderTitle
     },
     async createFolder () {
       this.folderLoading = true
@@ -624,42 +673,11 @@ export default {
       this.folderLoading = false
       this.showPopover = false
     },
-    handleDeleteDialog () {
-      const length = this.$refs.table.selection.length
-      this.deleteTitle = length === 1 ? '您即将删除以下资产:' : `您即将删除以下 ${length} 个资产:`
-      this.deleteContent = this.$refs.table.selection.map((e, index) => index + 1 === length ? `${e.properties['jcr:title'] || e.name}` : `${e.properties['jcr:title'] || e.name}<br>`).join('')
-    },
     async deleteAsset () {
-      this.folderLoading = true
-      try {
-        const formData = new FormData()
-        formData.append('cmd', 'deletePage')
-        this.$refs.table.selection.forEach(e => {
-          formData.append('path', e.path)
-        })
-        try {
-          await command(formData)
-          this.dialogDeleteFolderVisible = false
-          this.$message({
-            message: '删除成功',
-            type: 'success'
-          })
-          await this.initByListView(this.lastCrumb.id)
-          if (this.$refs.table.selection.some(e => e.nodeType !== 'dam:Asset')) {
-            await this.getTreeData()
-          }
-        } catch (e) {
-          this.errorData = e
-          this.$nextTick(() => {
-            const message = (document.getElementById('Message').innerHTML).split('。')[0]
-            this.$message({
-              message: `${message}`,
-              type: 'error'
-            })
-          })
-        }
-      } finally {
-        this.folderLoading = false
+      this.dialogDeleteFolderVisible = false
+      await this.initByListView(this.lastCrumb.id)
+      if (this.$refs.table.selection.some(e => e.nodeType !== 'dam:Asset')) {
+        await this.getTreeData()
       }
     },
     handleSelectionChange (selection) {
@@ -667,6 +685,7 @@ export default {
         ...e,
         show: e.icon === 'el-icon-info' ? selection.length === 1 || selection.every(e => e.nodeType === 'dam:Asset') : e.show
       }))]
+      this.showDownloadBox = selection.length === 0 ? false : selection.every(e => e.nodeType === 'dam:Asset')
     },
     handleTableCellClick (row) {
       // console.log(this.breadcrumb)
@@ -1221,6 +1240,106 @@ export default {
           align-items: center;
           justify-content: center;
           position: relative;
+        }
+      }
+    }
+
+    .download-wrap {
+      margin-left: 16px;
+      position: relative;
+      overflow: hidden;
+      -webkit-transition: .3s ease-out;
+      transition: .3s ease-out;
+
+      &.active {
+        overflow: visible;
+
+        .upload-box {
+          opacity: 1;
+          right: -13px;
+          bottom: -98px;
+        }
+      }
+
+      .upload-title {
+        font-size: 14px;
+        color: #ffffff;
+        height: 32px;
+        line-height: 32px;
+        background: #008ED3;
+        border-radius: 16px;
+        padding: 0 18px 0 34px;
+        position: relative;
+        cursor: pointer;
+
+        &:before {
+          content: '';
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background: url("../../assets/home/download.png") no-repeat center;
+          position: absolute;
+          top: 50%;
+          left: 10px;
+          transform: translateY(-50%);
+        }
+      }
+
+      .upload-box {
+        width: 125px;
+        background: #FFFFFF;
+        box-shadow: 0 6px 24px 0 rgba(0, 0, 0, 0.1148);
+        border-radius: 5px;
+        position: absolute;
+        right: -13px;
+        bottom: -150px;
+        z-index: 10;
+        padding: 8px 0;
+        opacity: 0;
+        -webkit-transition: .3s ease-out;
+        transition: .3s ease-out;
+
+        span {
+          display: block;
+          font-size: 14px;
+          line-height: 20px;
+          padding: 8px 12px 8px 42px;
+          position: relative;
+          color: #444444;
+          -webkit-transition: .3s ease-out;
+          transition: .3s ease-out;
+          -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+          cursor: pointer;
+
+          &.upload-file:before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: url("../../assets/home/file.png") no-repeat center;
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+          }
+
+          &.upload-folder:before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: url("../../assets/home/folder.png") no-repeat center;
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+          }
+
+          &:hover {
+            background: #ECFAFF;
+            color: #000000;
+          }
         }
       }
     }

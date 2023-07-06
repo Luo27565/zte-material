@@ -98,3 +98,5 @@ Vue.filter('formatDate', date => {
 })
 
 Vue.filter('formatDownloadManagement', downloadManagement => downloadManagement ? downloadManagement.split('/').at(-1) : '')
+
+Vue.filter('expiresWhetherFormat', time => dayjs().isBefore(dayjs(time)) ? '' : '已到期')

@@ -210,9 +210,6 @@
                           <el-form-item label="创建者">
                             <el-input v-model="senior.creator"></el-input>
                           </el-form-item>
-                          <!--                        <el-form-item label="下载关联" v-if="!isMultiple">-->
-                          <!--                          <el-input v-model="senior.downloadManagement" disabled></el-input>-->
-                          <!--                        </el-form-item>-->
                           <el-form-item label="封面图" v-show="metadata.type==='video/mp4'">
                             <div class="cover-image">
                               <el-input class="input" v-model="senior.coverImage"></el-input>
@@ -228,6 +225,18 @@
                               type="datetime"
                               :value-format="dateValueFormat">
                             </el-date-picker>
+                          </el-form-item>
+                          <el-form-item label="下载关联" v-if="!isMultiple" style="position: relative;">
+                            <div class="download-association-choose" @click="handleAssociation">
+                              <span>下载链接</span>
+                              <i class="el-icon-folder-opened"/>
+                            </div>
+                            <div class="download-association">
+                              <div class="download-association-item" v-for="(item,index) in relateds" :key="index">
+                                <span>{{ item.showName }}</span>
+                                <i class="el-icon-close" @click="handleCancelRelated(index)"/>
+                              </div>
+                            </div>
                           </el-form-item>
                         </el-form>
                       </div>
@@ -466,11 +475,13 @@
     <select-dialog :detail-data="detailData" :visible.sync="visible" :path="detailData.path"
                    @finish="init"/>
     <list-dialog :visible.sync="cancelVisible" :file-path="detailData.path" :related-file-path="pathList"
-                 :name="nameList" :detail-data="detailData"
+                 :edit-by-a-e-m="true"
+                 :name="nameList" :detail-data="detailData" :related-file-node-id="relatedFileNodeId"
                  @finish="init"/>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="[{...detailData}]" :file-name="detailData.name"
             @change="handleMove"/>
     <choose-dialog :visible.sync="visibleCoverImage" :filter-type="fileTypeOptions[0].type" @finish="handleCoverImage"/>
+    <AssociationDialog :visible.sync="visibleAssociation" @finish="init"/>
   </el-drawer>
 </template>
 
@@ -493,7 +504,6 @@ import {
   assetBatchEdit,
   assetDetail,
   assetEdit,
-  detailByAssetId,
   editFolder,
   searchPopularTag
 } from '@/api/api'
@@ -501,6 +511,7 @@ import { dateFormat } from '@/utils/tools'
 import SelectDialog from '@/components/SelectDialog/SelectDialog'
 import ChooseDialog from '@/components/ChooseDialog/ChooseDialog'
 import ListDialog from '@/components/ListDialog/ListDialog'
+import AssociationDialog from '@/components/AssociationDialog/AssociationDialog'
 import drawer from '@/components/Drawer/Drawer'
 import { downloadByGet } from '@/api'
 import zteStore from '@/store'
@@ -546,7 +557,8 @@ export default {
     SelectDialog,
     ListDialog,
     drawer,
-    ChooseDialog
+    ChooseDialog,
+    AssociationDialog
   },
   data () {
     const checkTag = (rule, value, callback) => {
@@ -578,10 +590,12 @@ export default {
       visible: false,
       cancelVisible: false,
       visibleCoverImage: false,
+      visibleAssociation: false,
       showDrawer: false,
       drawerTitle: 'move',
       pathList: '',
       nameList: '',
+      relatedFileNodeId: '',
       topBtn: [
         {
           icon: 'el-icon-edit',
@@ -606,12 +620,12 @@ export default {
         }, {
           icon: 'el-icon-paperclip',
           className: 'top-paperclip',
-          show: true,
+          show: false,
           label: '相关'
         }, {
           icon: 'el-icon-scissors',
           className: 'top-scissors',
-          show: true,
+          show: false,
           label: '取消关联'
         }
       ],
@@ -777,6 +791,7 @@ export default {
         flash: ''
       },
       detailData: {},
+      relateds: [],
       relatedData: {},
       isFolder: false,
       isMultiple: false,
@@ -824,6 +839,18 @@ export default {
           return
         }
         this.detailData = { ...results }
+        if (Object.keys(results.related || {}).length) {
+          let arr = []
+          for (const key in results.related) {
+            arr = [...arr, {
+              ...results.related[key],
+              key
+            }]
+          }
+          this.relateds = arr
+        } else {
+          this.relateds = []
+        }
         this.metadata.title = results.metadata['dc:title']
         this.metadata.copyrightOwner = results.metadata['xmpRights:Owner']
         this.metadata.expires = results.metadata['prism:expirationDate']
@@ -907,20 +934,21 @@ export default {
         //   }))]
         //   this.relatedData = {}
         // }
-        if (results.metadata['dc:downloadManagement']) {
-          const res = await detailByAssetId(results.metadata['dc:downloadManagement'])
-          this.relatedData = { ...res.results }
-        }
-        this.iptcExtension.downloadManagement = results.metadata['dc:downloadManagement']
-        this.topBtn = [...this.topBtn.map(e => ({
-          ...e,
-          show: e.icon === 'el-icon-scissors' ? !!('dc:downloadManagement' in results.metadata && results.metadata['dc:downloadManagement']) : e.show
-        }))]
+        // if (results.metadata['dc:downloadManagement']) {
+        //   const res = await detailByAssetId(results.metadata['dc:downloadManagement'])
+        //   this.relatedData = { ...res.results }
+        // }
+        // this.iptcExtension.downloadManagement = results.metadata['dc:downloadManagement']
+        // this.topBtn = [...this.topBtn.map(e => ({
+        //   ...e,
+        //   show: e.icon === 'el-icon-scissors' ? !!('dc:downloadManagement' in results.metadata && results.metadata['dc:downloadManagement']) : e.show
+        // }))]
       } finally {
         this.loading = false
       }
     },
     async closeDrawer (type) {
+      console.log(this.detailData.metadata)
       if (type === 'save' || type === 'saveAndClose') {
         await this.handleFormData()
         if (type === 'save' && this.isFolder) {
@@ -928,16 +956,16 @@ export default {
         }
         if (type === 'saveAndClose') {
           if (this.$refs.metadataForm.length) {
-            this.$refs.metadataForm[0].validate(async valid => {
-              if (valid) {
-                if (this.pathProps) {
-                  this.$emit('update:drawer', false)
-                } else {
-                  const { path } = this.$route
-                  await this.$router.push({ path })
-                }
-              }
-            })
+            // this.$refs.metadataForm[0].validate(async valid => {
+            //   if (valid) {
+            //     if (this.pathProps) {
+            //       this.$emit('update:drawer', false)
+            //     } else {
+            //       const { path } = this.$route
+            //       await this.$router.push({ path })
+            //     }
+            //   }
+            // })
           } else {
             if (this.pathProps) {
               this.$emit('update:drawer', false)
@@ -1009,75 +1037,76 @@ export default {
         if (res['status.code'] === 200) {
           this.$message.success('成功 已成功提交表单')
           await this.getTreeData()
+          await this.closeDrawer('close')
         } else {
           this.$message.error(`失败 ${res['status.message']}`)
         }
         return
       }
       if (this.isMultiple) {
-        const properties = {}
-        properties.onTime = this.metadata.onTime
-        properties.onTime = this.metadata.onTime
-        const metadata = {}
-        metadata['dc:title'] = this.metadata.title
-        metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
-        metadata['prism:expirationDate'] = this.metadata.expires
-        metadata['dc:source'] = this.metadata.source
-        metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
-        metadata['dc:description'] = this.metadata.description
-        // metadata['cq:tags'] = this.metadata.tags.join(';')
-        metadata['xmp:CreatorTool'] = this.metadata.creatorTool
-        // metadata['dc:sort'] = this.metadata.sort
-        metadata['dc:sort'] = this.senior.sort
-        metadata['dc:creator'] = this.senior.creator
-        metadata['dc:contributor'] = this.senior.contributor
-        metadata['dc:rights'] = this.senior.copyright
-        // metadata['xmpRights:Owner'] = this.senior.copyrightOwner
-        metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
-        // metadata['prism:expirationDate'] = this.senior.expires
-        metadata['photoshop:DateCreated'] = this.iptc.dateCreated
-        metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
-        metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
-        metadata['photoshop:City'] = this.iptc.imageCity
-        metadata['photoshop:State'] = this.iptc.imageProvince
-        metadata['photoshop:Country'] = this.iptc.imageCountry
-        metadata['Iptc4xmpCore:CountryCode'] = this.iptc.countryCode
-        metadata['photoshop:Headline'] = this.iptc.headline
-        metadata['Iptc4xmpCore:SubjectCode'] = this.iptc.subjectCode
-        metadata['photoshop:CaptionWriter'] = this.iptc.descriptionWriter
-        metadata['photoshop:TransmissionReference'] = this.iptc.jobIdentifier
-        metadata['photoshop:Instructions'] = this.iptc.instructions
-        metadata['photoshop:Credit'] = this.iptc.creditLine
-        metadata['photoshop:Source'] = this.iptc.source
-        metadata['Iptc4xmpExt:OrganisationInImageName'] = this.iptcExtension.organisationName
-        metadata['Iptc4xmpExt:OrganisationInImageCode'] = this.iptcExtension.organisationCode
-        metadata['dc:portrait'] = this.iptcExtension.portrait
-        metadata['Iptc4xmpExt:AddlModelInfo'] = this.iptcExtension.additionalModelInfo
-        metadata['Iptc4xmpExt:ModelAge'] = this.iptcExtension.modelAge
-        metadata['plus:MinorModelAgeDisclosure'] = this.iptcExtension.minorModelImageDisclosure
-        metadata['plus:ModelReleaseStatus'] = this.iptcExtension.modelReleaseStatus
-        metadata['plus:ModelReleaseID'] = this.iptcExtension.modelReleaseIdentifier
-        metadata['plus:ImageSupplierImageID'] = this.iptcExtension.supplierImageID
-        metadata['Iptc4xmpExt:MaxAvailWidth'] = this.iptcExtension.maxAvailableWidth || ''
-        metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
-        metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
-        metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
-        // metadata['dc:source'] = this.iptcExtension.source
-        metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
-        metadata['cq:tags'] = this.iptcExtension.tags.join(';')
-        metadata['dc:recommend'] = this.metadata.recommended
-        metadata['dc:color'] = this.metadata.color
-        metadata['dc:rights'] = this.metadata.rights
-        metadata['dc:composition'] = this.metadata.composition
-        // metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
-        for (const key in metadata) {
-          !metadata[key] && delete metadata[key]
-        }
-        for (const key in properties) {
-          !properties[key] && delete properties[key]
-        }
         this.$refs.metadataForm[0].validate(async valid => {
           if (valid) {
+            const properties = {}
+            properties.onTime = this.metadata.onTime
+            properties.onTime = this.metadata.onTime
+            const metadata = {}
+            metadata['dc:title'] = this.metadata.title
+            metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
+            metadata['prism:expirationDate'] = this.metadata.expires
+            metadata['dc:source'] = this.metadata.source
+            metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
+            metadata['dc:description'] = this.metadata.description
+            // metadata['cq:tags'] = this.metadata.tags.join(';')
+            metadata['xmp:CreatorTool'] = this.metadata.creatorTool
+            // metadata['dc:sort'] = this.metadata.sort
+            metadata['dc:sort'] = this.senior.sort
+            metadata['dc:creator'] = this.senior.creator
+            metadata['dc:contributor'] = this.senior.contributor
+            metadata['dc:rights'] = this.senior.copyright
+            // metadata['xmpRights:Owner'] = this.senior.copyrightOwner
+            metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
+            // metadata['prism:expirationDate'] = this.senior.expires
+            metadata['photoshop:DateCreated'] = this.iptc.dateCreated
+            metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
+            metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
+            metadata['photoshop:City'] = this.iptc.imageCity
+            metadata['photoshop:State'] = this.iptc.imageProvince
+            metadata['photoshop:Country'] = this.iptc.imageCountry
+            metadata['Iptc4xmpCore:CountryCode'] = this.iptc.countryCode
+            metadata['photoshop:Headline'] = this.iptc.headline
+            metadata['Iptc4xmpCore:SubjectCode'] = this.iptc.subjectCode
+            metadata['photoshop:CaptionWriter'] = this.iptc.descriptionWriter
+            metadata['photoshop:TransmissionReference'] = this.iptc.jobIdentifier
+            metadata['photoshop:Instructions'] = this.iptc.instructions
+            metadata['photoshop:Credit'] = this.iptc.creditLine
+            metadata['photoshop:Source'] = this.iptc.source
+            metadata['Iptc4xmpExt:OrganisationInImageName'] = this.iptcExtension.organisationName
+            metadata['Iptc4xmpExt:OrganisationInImageCode'] = this.iptcExtension.organisationCode
+            metadata['dc:portrait'] = this.iptcExtension.portrait
+            metadata['Iptc4xmpExt:AddlModelInfo'] = this.iptcExtension.additionalModelInfo
+            metadata['Iptc4xmpExt:ModelAge'] = this.iptcExtension.modelAge
+            metadata['plus:MinorModelAgeDisclosure'] = this.iptcExtension.minorModelImageDisclosure
+            metadata['plus:ModelReleaseStatus'] = this.iptcExtension.modelReleaseStatus
+            metadata['plus:ModelReleaseID'] = this.iptcExtension.modelReleaseIdentifier
+            metadata['plus:ImageSupplierImageID'] = this.iptcExtension.supplierImageID
+            metadata['Iptc4xmpExt:MaxAvailWidth'] = this.iptcExtension.maxAvailableWidth || ''
+            metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
+            metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
+            metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
+            // metadata['dc:source'] = this.iptcExtension.source
+            metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
+            metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+            metadata['dc:recommend'] = this.metadata.recommended
+            metadata['dc:color'] = this.metadata.color
+            metadata['dc:rights'] = this.metadata.rights
+            metadata['dc:composition'] = this.metadata.composition
+            // metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
+            for (const key in metadata) {
+              !metadata[key] && delete metadata[key]
+            }
+            for (const key in properties) {
+              !properties[key] && delete properties[key]
+            }
             try {
               const {
                 status,
@@ -1090,6 +1119,7 @@ export default {
               })
               if (status === 200 && success) {
                 this.$message.success('成功 已成功提交表单')
+                await this.closeDrawer('close')
               } else {
                 this.$message.error(`失败 ${errorMessage}`)
               }
@@ -1102,65 +1132,65 @@ export default {
         })
         return
       }
-      this.detailData.metadata['dc:title'] = this.metadata.title
-      this.detailData.metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
-      this.detailData.metadata['prism:expirationDate'] = this.metadata.expires
-      this.detailData.metadata['dc:source'] = this.metadata.source
-      this.detailData.metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
-      this.detailData.metadata['dc:description'] = this.metadata.description
-      // this.detailData.metadata['cq:tags'] = this.metadata.tags.join(';')
-      this.detailData.metadata['xmp:CreatorTool'] = this.metadata.creatorTool
-      this.detailData.properties.onTime = this.metadata.onTime
-      this.detailData.properties.offTime = this.metadata.offTime
-      // this.detailData.metadata['dc:sort'] = this.metadata.sort
-      this.detailData.metadata['dc:download'] = this.senior.downloadStatistics
-      this.detailData.metadata['dc:coverImage'] = this.senior.coverImage
-      this.detailData.metadata['dc:sort'] = this.senior.sort
-      this.detailData.metadata['dc:creator'] = this.senior.creator
-      this.detailData.metadata['dc:contributor'] = this.senior.contributor
-      this.detailData.metadata['dc:rights'] = this.senior.copyright
-      // this.detailData.metadata['xmpRights:Owner'] = this.senior.copyrightOwner
-      this.detailData.metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
-      // this.detailData.metadata['prism:expirationDate'] = this.senior.expires
-      this.detailData.metadata['photoshop:DateCreated'] = this.iptc.dateCreated
-      this.detailData.metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
-      this.detailData.metadata['photoshop:City'] = this.iptc.imageCity
-      this.detailData.metadata['photoshop:State'] = this.iptc.imageProvince
-      this.detailData.metadata['photoshop:Country'] = this.iptc.imageCountry
-      this.detailData.metadata['Iptc4xmpCore:CountryCode'] = this.iptc.countryCode
-      this.detailData.metadata['photoshop:Headline'] = this.iptc.headline
-      this.detailData.metadata['Iptc4xmpCore:SubjectCode'] = this.iptc.subjectCode
-      this.detailData.metadata['photoshop:CaptionWriter'] = this.iptc.descriptionWriter
-      this.detailData.metadata['photoshop:TransmissionReference'] = this.iptc.jobIdentifier
-      this.detailData.metadata['photoshop:Instructions'] = this.iptc.instructions
-      this.detailData.metadata['photoshop:Credit'] = this.iptc.creditLine
-      this.detailData.metadata['photoshop:Source'] = this.iptc.source
-      this.detailData.metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
-      this.detailData.metadata['Iptc4xmpExt:OrganisationInImageName'] = this.iptcExtension.organisationName
-      this.detailData.metadata['Iptc4xmpExt:OrganisationInImageCode'] = this.iptcExtension.organisationCode
-      // this.detailData.metadata['dc:coverImage'] = this.iptcExtension.coverImage
-      this.detailData.metadata['dc:portrait'] = this.iptcExtension.portrait
-      this.detailData.metadata['Iptc4xmpExt:AddlModelInfo'] = this.iptcExtension.additionalModelInfo
-      this.detailData.metadata['Iptc4xmpExt:ModelAge'] = this.iptcExtension.modelAge
-      this.detailData.metadata['plus:MinorModelAgeDisclosure'] = this.iptcExtension.minorModelImageDisclosure
-      this.detailData.metadata['plus:ModelReleaseStatus'] = this.iptcExtension.modelReleaseStatus
-      this.detailData.metadata['plus:ModelReleaseID'] = this.iptcExtension.modelReleaseIdentifier
-      this.detailData.metadata['plus:ImageSupplierImageID'] = this.iptcExtension.supplierImageID
-      this.detailData.metadata['Iptc4xmpExt:MaxAvailWidth'] = this.iptcExtension.maxAvailableWidth || ''
-      this.detailData.metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
-      this.detailData.metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
-      this.detailData.metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
-      // this.detailData.metadata['dc:source'] = this.iptcExtension.source
-      this.detailData.metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
-      this.detailData.metadata['cq:tags'] = this.iptcExtension.tags.join(';')
-      this.detailData.metadata['dc:recommend'] = this.metadata.recommended
-      this.detailData.metadata['dc:color'] = this.metadata.color
-      this.detailData.metadata['dc:rights'] = this.metadata.rights
-      this.detailData.metadata['dc:composition'] = this.metadata.composition
-      // this.detailData.metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
-      // this.detailData.metadata['dc:download'] = this.metadata.downloadStatistics
       this.$refs.metadataForm[0].validate(async valid => {
         if (valid) {
+          this.detailData.metadata['dc:title'] = this.metadata.title
+          this.detailData.metadata['xmpRights:Owner'] = this.metadata.copyrightOwner
+          this.detailData.metadata['prism:expirationDate'] = this.metadata.expires
+          this.detailData.metadata['dc:source'] = this.metadata.source
+          this.detailData.metadata['dc:authorizationScope'] = this.metadata.authorizationScope.join(';')
+          this.detailData.metadata['dc:description'] = this.metadata.description
+          // this.detailData.metadata['cq:tags'] = this.metadata.tags.join(';')
+          this.detailData.metadata['xmp:CreatorTool'] = this.metadata.creatorTool
+          this.detailData.properties.onTime = this.metadata.onTime
+          this.detailData.properties.offTime = this.metadata.offTime
+          // this.detailData.metadata['dc:sort'] = this.metadata.sort
+          this.detailData.metadata['dc:download'] = this.senior.downloadStatistics
+          this.detailData.metadata['dc:coverImage'] = this.senior.coverImage
+          this.detailData.metadata['dc:sort'] = this.senior.sort
+          this.detailData.metadata['dc:creator'] = this.senior.creator
+          this.detailData.metadata['dc:contributor'] = this.senior.contributor
+          this.detailData.metadata['dc:rights'] = this.senior.copyright
+          // this.detailData.metadata['xmpRights:Owner'] = this.senior.copyrightOwner
+          this.detailData.metadata['xmpRights:UsageTerms'] = this.senior.usageTerms
+          // this.detailData.metadata['prism:expirationDate'] = this.senior.expires
+          this.detailData.metadata['photoshop:DateCreated'] = this.iptc.dateCreated
+          this.detailData.metadata['Iptc4xmpCore:IntellectualGenre'] = this.iptc.intellectualGenre
+          this.detailData.metadata['photoshop:City'] = this.iptc.imageCity
+          this.detailData.metadata['photoshop:State'] = this.iptc.imageProvince
+          this.detailData.metadata['photoshop:Country'] = this.iptc.imageCountry
+          this.detailData.metadata['Iptc4xmpCore:CountryCode'] = this.iptc.countryCode
+          this.detailData.metadata['photoshop:Headline'] = this.iptc.headline
+          this.detailData.metadata['Iptc4xmpCore:SubjectCode'] = this.iptc.subjectCode
+          this.detailData.metadata['photoshop:CaptionWriter'] = this.iptc.descriptionWriter
+          this.detailData.metadata['photoshop:TransmissionReference'] = this.iptc.jobIdentifier
+          this.detailData.metadata['photoshop:Instructions'] = this.iptc.instructions
+          this.detailData.metadata['photoshop:Credit'] = this.iptc.creditLine
+          this.detailData.metadata['photoshop:Source'] = this.iptc.source
+          this.detailData.metadata['Iptc4xmpCore:Location'] = this.iptc.sublocation
+          this.detailData.metadata['Iptc4xmpExt:OrganisationInImageName'] = this.iptcExtension.organisationName
+          this.detailData.metadata['Iptc4xmpExt:OrganisationInImageCode'] = this.iptcExtension.organisationCode
+          // this.detailData.metadata['dc:coverImage'] = this.iptcExtension.coverImage
+          this.detailData.metadata['dc:portrait'] = this.iptcExtension.portrait
+          this.detailData.metadata['Iptc4xmpExt:AddlModelInfo'] = this.iptcExtension.additionalModelInfo
+          this.detailData.metadata['Iptc4xmpExt:ModelAge'] = this.iptcExtension.modelAge
+          this.detailData.metadata['plus:MinorModelAgeDisclosure'] = this.iptcExtension.minorModelImageDisclosure
+          this.detailData.metadata['plus:ModelReleaseStatus'] = this.iptcExtension.modelReleaseStatus
+          this.detailData.metadata['plus:ModelReleaseID'] = this.iptcExtension.modelReleaseIdentifier
+          this.detailData.metadata['plus:ImageSupplierImageID'] = this.iptcExtension.supplierImageID
+          this.detailData.metadata['Iptc4xmpExt:MaxAvailWidth'] = this.iptcExtension.maxAvailableWidth || ''
+          this.detailData.metadata['Iptc4xmpExt:MaxAvailHeight'] = this.iptcExtension.maxAvailableHeight || ''
+          this.detailData.metadata['Iptc4xmpExt:DigitalSourceType'] = this.iptcExtension.digitalSourceType
+          this.detailData.metadata['plus:PropertyReleaseID'] = this.iptcExtension.propertyReleaseIdentifier
+          // this.detailData.metadata['dc:source'] = this.iptcExtension.source
+          this.detailData.metadata['dc:propertyReleaseStatus'] = this.iptcExtension.propertyReleaseStatus
+          this.detailData.metadata['cq:tags'] = this.iptcExtension.tags.join(';')
+          this.detailData.metadata['dc:recommend'] = this.metadata.recommended
+          this.detailData.metadata['dc:color'] = this.metadata.color
+          this.detailData.metadata['dc:rights'] = this.metadata.rights
+          this.detailData.metadata['dc:composition'] = this.metadata.composition
+          // this.detailData.metadata['dc:authorizationScope'] = this.iptcExtension.authorizationScope.join(';')
+          // this.detailData.metadata['dc:download'] = this.metadata.downloadStatistics
           try {
             const {
               status,
@@ -1169,6 +1199,7 @@ export default {
             } = await assetEdit({ ...this.detailData })
             if (status === 200 && success) {
               this.$message.success('成功 已成功提交表单')
+              await this.closeDrawer('close')
             } else {
               this.$message.error(`失败 ${errorMessage}`)
             }
@@ -1232,6 +1263,15 @@ export default {
           }
         }
       })
+    },
+    handleAssociation () {
+      this.visibleAssociation = true
+    },
+    handleCancelRelated (index) {
+      this.nameList = this.relateds[index].showName
+      this.pathList = this.relateds[index]['sling:resource']
+      this.relatedFileNodeId = this.relateds[index].key
+      this.cancelVisible = true
     }
   },
   mounted () {
@@ -1558,6 +1598,61 @@ export default {
                     box-sizing: border-box;
                     margin: 0;
                     padding-bottom: 1.875vw;
+
+                    .download-association-choose {
+                      height: 36px;
+                      border: 1px solid #EDEDED;
+                      border-radius: 8px;
+                      display: flex;
+                      align-items: center;
+                      background-color: #F5F7FA;
+                      cursor: pointer;
+                      margin-bottom: 10px;
+                      padding: 0 16px;
+                      font-size: 14px;
+                      justify-content: space-between;
+                      font-weight: 400;
+                      color: #666666;
+
+                      i {
+                        font-size: 18px;
+                      }
+                    }
+
+                    .download-association {
+                      display: flex;
+                      flex-direction: column;
+
+                      .download-association-item {
+                        border-radius: 8px;
+                        height: 36px;
+                        width: 100%;
+                        display: flex;
+                        font-size: 12px;
+                        color: #444444;
+                        align-items: center;
+                        justify-content: space-between;
+                        font-weight: 400;
+                        margin-bottom: 8px;
+                        border: 1px solid #EDEDED;
+                        padding: 0 16px;
+                        box-sizing: border-box;
+
+                        span {
+                          flex: 1;
+                          height: 100%;
+                          line-height: 36px;
+                          overflow: hidden;
+                          white-space: nowrap;
+                          text-overflow: ellipsis;
+                        }
+
+                        i {
+                          cursor: pointer;
+                          flex-shrink: 0;
+                        }
+                      }
+                    }
 
                     /deep/ .el-form-item__label {
                       font-size: 14px;
