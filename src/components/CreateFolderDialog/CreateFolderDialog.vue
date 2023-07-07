@@ -116,9 +116,8 @@ export default {
     handleSubmit () {
       this.$refs.form.validate(async valid => {
         if (valid) {
-          const res = await getJSON(this.path)
-          console.log(Object.keys(res))
-          if (Object.keys(res).some(e => e === this.form.folderName)) {
+          const data = await getJSON(this.path)
+          if (Object.keys(data).some(e => e === this.form.folderName)) {
             this.showPopover = true
             return
           }
@@ -129,13 +128,22 @@ export default {
           formData.append('./jcr:primaryType', 'sling:Folder')
           formData.append('./jcr:content/jcr:primaryType', 'nt:unstructured')
           formData.append('_charset_', 'UTF-8')
+          formData.append('./jcr:content/folderMetadataSchema', '')
           formData.append('./jcr:content/dc:sort', this.form.sort || dayjs().format('YYYY-MM-DD HH:mm:ss'))
           formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
-          formData.append('removemanualthumbnail', 'false')
-          formData.append('path', `${this.path}/${this.form.folderName}`)
-          formData.append(':operation', 'dam.share.folder')
-          formData.append('./jcr:content/customThumbnailPath@TypeHint', 'String')
-          await createFolderByAem(this.path, formData)
+          const res = await createFolderByAem(`${this.path}/${this.form.folderName}`, formData)
+          if (res['status.code'] === 200 || res['status.code'] === 201) {
+            this.$message({
+              message: '创建成功',
+              type: 'success'
+            })
+            this.$emit('finish')
+          } else {
+            this.$message({
+              message: res['status.message'],
+              type: 'error'
+            })
+          }
         }
       })
     }

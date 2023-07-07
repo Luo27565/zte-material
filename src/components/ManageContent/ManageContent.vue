@@ -305,7 +305,7 @@
       <!--      </span>-->
       <!--      </el-dialog>-->
     </div>
-    <CreateFolderDialog :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id"/>
+    <CreateFolderDialog :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id" @finish="createFolderFinish"/>
     <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="hasSelectData" @finish="deleteAsset"/>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
@@ -626,45 +626,48 @@ export default {
     createFolderDialog () {
       this.dialogAddFolderVisible = true
     },
-    async createFolder () {
-      this.folderLoading = true
-      try {
-        const res = await getJSON(this.lastCrumb.id)
-        this.folderJson = Object.keys(res)
-        if (this.folderJson.some(e => e === this.folderForm.folderName)) {
-          this.showPopover = true
-        } else {
-          const formData = new FormData()
-          formData.append('./jcr:content/jcr:title', this.folderForm.folderTitle)
-          formData.append(':name', this.folderForm.folderName)
-          if (this.folderForm.sort) {
-            formData.append('./jcr:content/dc:sort', dayjs(this.folderForm.sort).format())
-            formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
-          }
-          const res = await createFolderByAem(`${this.lastCrumb.id}/${this.folderForm.folderName}`, formData)
-          // const { success } = await createFolder({
-          //   ...this.folderForm,
-          //   filePath: this.lastCrumb.id
-          // })
-          if (res['status.code'] === 200 || res['status.code'] === 201) {
-            this.$message({
-              message: '创建成功',
-              type: 'success'
-            })
-            this.dialogAddFolderVisible = false
-            this.folderJson = []
-            await this.initByListView(this.lastCrumb.id)
-            await this.getTreeData()
-          } else {
-            this.$message({
-              message: res['status.message'],
-              type: 'error'
-            })
-          }
-        }
-      } finally {
-        this.folderLoading = false
-      }
+    async createFolderFinish () {
+      this.dialogAddFolderVisible = false
+      await this.initByListView(this.lastCrumb.id)
+      await this.getTreeData()
+      // this.folderLoading = true
+      // try {
+      //   const res = await getJSON(this.lastCrumb.id)
+      //   this.folderJson = Object.keys(res)
+      //   if (this.folderJson.some(e => e === this.folderForm.folderName)) {
+      //     this.showPopover = true
+      //   } else {
+      //     const formData = new FormData()
+      //     formData.append('./jcr:content/jcr:title', this.folderForm.folderTitle)
+      //     formData.append(':name', this.folderForm.folderName)
+      //     if (this.folderForm.sort) {
+      //       formData.append('./jcr:content/dc:sort', dayjs(this.folderForm.sort).format())
+      //       formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
+      //     }
+      //     const res = await createFolderByAem(`${this.lastCrumb.id}/${this.folderForm.folderName}`, formData)
+      //     // const { success } = await createFolder({
+      //     //   ...this.folderForm,
+      //     //   filePath: this.lastCrumb.id
+      //     // })
+      //     if (res['status.code'] === 200 || res['status.code'] === 201) {
+      //       this.$message({
+      //         message: '创建成功',
+      //         type: 'success'
+      //       })
+      //       this.dialogAddFolderVisible = false
+      //       this.folderJson = []
+      //       await this.initByListView(this.lastCrumb.id)
+      //       await this.getTreeData()
+      //     } else {
+      //       this.$message({
+      //         message: res['status.message'],
+      //         type: 'error'
+      //       })
+      //     }
+      //   }
+      // } finally {
+      //   this.folderLoading = false
+      // }
     },
     folderDialogClose () {
       this.folderForm.folderTitle = ''
@@ -1277,7 +1280,7 @@ export default {
           display: inline-block;
           width: 20px;
           height: 20px;
-          background: url("../../assets/home/download.png") no-repeat center;
+          background: url("../../assets/home/download-white.png") no-repeat center;
           position: absolute;
           top: 50%;
           left: 10px;
