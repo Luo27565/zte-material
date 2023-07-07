@@ -15,7 +15,8 @@
           </el-image>
         </div>
         <div class="name">{{ item.showName }}</div>
-        <i @click="handleDown(index)" title="下载" class="el-icon-download download-icon"/>
+        <img alt="download" src="../../assets/home/download.png" class="download-icon" @click="handleDown(index)"
+             title="下载"/>
       </div>
     </div>
     <div slot="footer">
@@ -198,7 +199,8 @@ export default {
 
           .download-icon {
             cursor: pointer;
-            font-size: 18px;
+            width: 28px;
+            height: 25px;
           }
         }
       }
