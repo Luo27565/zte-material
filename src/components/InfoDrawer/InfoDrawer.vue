@@ -440,12 +440,28 @@
           <div v-else class="folder-content">
             <div class="folder-img">
               <div class="img">
-                <img :src="`${baseUrl}${detailData.path}.folderthumbnail.jpg`"/>
+                <img v-show="!uploadFileUrl"
+                     :src="detailData.folderImg?`${baseUrl}${detailData.folderImg}`: `${baseUrl}${detailData.path}.folderthumbnail.jpg`"/>
+                <img v-show="uploadFileUrl" alt="" :src="uploadFileUrl"/>
                 <div class="folder-text">
                   <div>文件夹</div>
                   <div class="folder-name" v-if="detailData.properties">{{ detailData.properties['jcr:title'] }}</div>
                   <div class="folder-name" v-else>{{ name }}</div>
                 </div>
+              </div>
+              <div class="change-btn">
+                <div v-if="uploadFileUrl" class="btn detail-save" @click="uploadFileUrl = ''">
+                  恢复缩略图
+                </div>
+                <el-upload v-else :with-credentials="true" :show-file-list="false" :limit="1"
+                           accept="image/jpeg,image/png"
+                           action=""
+                           :auto-upload="false"
+                           :on-change="handleFileList">
+                  <div class="btn detail-save">
+                    更改缩略图
+                  </div>
+                </el-upload>
               </div>
             </div>
             <div class="folder-tab">
@@ -454,6 +470,29 @@
                   <div class="folder-tab-content">
                     <div class="title">文件夹标题</div>
                     <el-input v-model="detailData.title"></el-input>
+                  </div>
+                  <div class="folder-tab-content" style="margin-top: 24px">
+                    <div class="title">路径名称
+                      <el-tooltip style="margin-left: 6px;" effect="light"
+                                  content="修改会影响文件路径，请谨慎修"
+                                  placement="right">
+                        <i style="font-size: 16px;" class="el-icon-question"/>
+                      </el-tooltip>
+                    </div>
+                    <el-input v-model="detailData.pathName" @input="handlePathName"></el-input>
+                  </div>
+                  <div class="folder-tab-content" style="margin-top: 24px">
+                    <div class="title">文件夹权限
+                      <el-tooltip style="margin-left: 6px;" effect="light"
+                                  content="不公开则表示该文件夹只有管理员可见，普通用户必须通过管理员分享链接查询"
+                                  placement="right">
+                        <i style="font-size: 16px;" class="el-icon-question"/>
+                      </el-tooltip>
+                    </div>
+                    <el-radio-group v-model="detailData.permission">
+                      <el-radio label="public">公开</el-radio>
+                      <el-radio label="private">不公开</el-radio>
+                    </el-radio-group>
                   </div>
                   <div class="folder-tab-content" style="margin-top: 24px">
                     <div class="title">排序</div>
@@ -504,7 +543,7 @@ import {
   assetBatchEdit,
   assetDetail,
   assetEdit,
-  editFolder,
+  editFolder, folderPermission,
   searchPopularTag
 } from '@/api/api'
 import { dateFormat } from '@/utils/tools'
@@ -796,6 +835,8 @@ export default {
       isFolder: false,
       isMultiple: false,
       multipleData: [],
+      uploadFileUrl: '',
+      uploadFileData: null,
       visibleAddTag: false,
       tagForm: {
         tag: ''
@@ -810,6 +851,11 @@ export default {
   },
   methods: {
     ...mapActions(zteStore, ['getTreeData']),
+    handleFileList (file) {
+      this.uploadFileData = file
+      const { raw } = file
+      this.uploadFileUrl = URL.createObjectURL(raw)
+    },
     async init () {
       this.loading = true
       try {
@@ -833,7 +879,10 @@ export default {
           this.detailData = {
             ...results,
             title: (results.properties && 'jcr:title' in results.properties) ? results.properties['jcr:title'] : this.name,
-            sort: (results.metadata && 'dc:sort' in results.metadata) ? new Date(dateFormat(new Date(results.metadata['dc:sort']))) : ''
+            sort: (results.metadata && 'dc:sort' in results.metadata) ? new Date(dateFormat(new Date(results.metadata['dc:sort']))) : '',
+            folderImg: (results.renditions && 'folder' in results.renditions) ? `${results.renditions.folder}?tempId=${Math.random()}` : '',
+            permission: (results.properties && 'permission' in results.properties) ? results.properties.permission ? results.properties.permission : 'public' : 'public',
+            pathName: results.name
           }
           this.isFolder = true
           return
@@ -947,9 +996,20 @@ export default {
         this.loading = false
       }
     },
+    handlePathName () {
+      const regex = /[/%\\:*?"[\]|.#{}^;+ ]/g
+      regex.test(this.detailData.pathName) && (this.detailData.pathName = this.detailData.pathName.replace(regex, ''))
+    },
     async closeDrawer (type) {
-      console.log(this.detailData.metadata)
       if (type === 'save' || type === 'saveAndClose') {
+        if (this.isFolder && type === 'saveAndClose' && !this.detailData.title) {
+          this.$message.error('请输入文件夹标题')
+          return
+        }
+        if (this.isFolder && type === 'saveAndClose' && !this.detailData.pathName) {
+          this.$message.error('请输入路径名称')
+          return
+        }
         await this.handleFormData()
         if (type === 'save' && this.isFolder) {
           await this.init()
@@ -1002,7 +1062,7 @@ export default {
       this.$router.push({
         path,
         query: {
-          path: `${data.path}/${data.name}`
+          path: `${data.path} /${data.name}`
         }
       })
     },
@@ -1027,19 +1087,47 @@ export default {
         } = this.detailData
         const formData = new FormData()
         formData.append('./jcr:content/jcr:title', title)
+        formData.append(':name', this.detailData.name)
+        formData.append('./jcr:primaryType', 'sling:Folder')
+        formData.append('./jcr:content/jcr:primaryType', 'nt:unstructured')
+        formData.append('_charset_', 'UTF-8')
+        formData.append('./jcr:content/folderMetadataSchema', '')
         formData.append('./jcr:content/dc:sort', sort ? dayjs(sort).format() : '')
-        // formData.append('title', title)
-        // formData.append('./jcr:primaryType', nodeType)
-        // formData.append('_charset_', 'UTF-8')
-        // formData.append(':operation', 'dam.share.folder')
-        // formData.append('path', path)
+        formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
         const res = await editFolder(path, formData)
         if (res['status.code'] === 200) {
           this.$message.success('成功 已成功提交表单')
           await this.getTreeData()
           await this.closeDrawer('close')
         } else {
-          this.$message.error(`失败 ${res['status.message']}`)
+          this.$message.error(`失败 ${res['status.message']}`
+          )
+        }
+        if (this.uploadFileUrl) {
+          const formData = new FormData()
+          formData.append('coverImage', this.uploadFileData.raw)
+          formData.append('removemanualthumbnail', 'false')
+          formData.append('./jcr:content/customThumbnailPath@TypeHint', 'String')
+          formData.append(':operation', 'dam.share.folder')
+          formData.append('path', path)
+          const res = await editFolder(path, formData)
+          if (res['status.code'] !== 200) {
+            this.$message.error('更改缩略图失败')
+          }
+        }
+        // 修改路径
+        if (this.detailData.permission !== this.detailData.properties.permission) {
+          const formData = new FormData()
+          formData.append('filePath',
+            `${this.detailData.path}`
+          )
+          formData.append('permission', this.detailData.permission)
+          const res = await folderPermission(formData)
+          if (res.status !== 200 && res.success) {
+            this.$message.error(
+              `修改文件夹权限失败，${res.errorMessage}`
+            )
+          }
         }
         return
       }
@@ -1121,7 +1209,9 @@ export default {
                 this.$message.success('成功 已成功提交表单')
                 await this.closeDrawer('close')
               } else {
-                this.$message.error(`失败 ${errorMessage}`)
+                this.$message.error(
+                  `失败 ${errorMessage}`
+                )
               }
             } finally {
               this.loading = false
@@ -1201,7 +1291,9 @@ export default {
               this.$message.success('成功 已成功提交表单')
               await this.closeDrawer('close')
             } else {
-              this.$message.error(`失败 ${errorMessage}`)
+              this.$message.error(
+                `失败 ${errorMessage}`
+              )
             }
           } finally {
             this.loading = false
@@ -1253,13 +1345,17 @@ export default {
       formData.append('_charset_', 'UTF-8')
       this.$refs.tagForm[0].validate(async valid => {
         if (valid) {
-          const res = await addTag(`/content/cq:tags/zte-asset-tags/${this.tagForm.tag}`, formData)
+          const res = await addTag(
+            `/content/cq:tags/zte-asset-tags/${this.tagForm.tag}`
+            , formData)
           if (res['status.code'] === 200 || res['status.code'] === 201) {
             this.$message.success('添加标签成功')
             await this.handleTags()
             this.handleCancelAddTag()
           } else {
-            this.$message.error(`失败 ${res['status.message']}`)
+            this.$message.error(
+              `失败 ${res['status.message']}`
+            )
           }
         }
       })
@@ -1915,6 +2011,124 @@ export default {
             box-shadow: 0 0.09375rem 0.09375rem rgba(0, 0, 0, 0.25);
             padding: 1rem;
             height: 16rem;
+            position: relative;
+
+            .change-btn {
+              position: absolute;
+              top: 16rem;
+              padding: 1rem;
+
+              /deep/ .el-upload-dragger {
+                width: unset;
+                height: unset;
+                background-color: unset;
+                border: unset;
+              }
+
+              .btn {
+                display: inline-block;
+                height: 32px;
+                border-radius: 16px;
+                line-height: 32px;
+                padding: 0 12px 0 36px;
+                cursor: pointer;
+                position: relative;
+                -webkit-transition: .3s ease-out;
+                transition: .3s ease-out;
+                margin-right: 12px !important;
+                font-size: 16px;
+                color: #222222;
+
+                &:hover {
+                  //background: #ECFAFF;
+                }
+
+                i {
+                  display: inline-block;
+                  position: absolute;
+                  top: 50%;
+                  transform: translateY(-50%);
+
+                  &:before {
+                    display: none;
+                  }
+                }
+
+                &.top-attribute {
+                  i {
+                    width: 30px;
+                    height: 27px;
+                    left: 6px;
+                    background: url("../../assets/home/attribute.png") no-repeat center;
+                    background-size: cover;
+                  }
+                }
+
+                &.top-move {
+                  i {
+                    width: 28px;
+                    height: 26px;
+                    left: 7px;
+                    background: url("../../assets/home/move.png") no-repeat center;
+                    background-size: cover;
+                  }
+                }
+
+                &.top-download {
+                  i {
+                    width: 28px;
+                    height: 25px;
+                    left: 7px;
+                    background: url("../../assets/home/download.png") no-repeat center;
+                    background-size: cover;
+                  }
+                }
+
+                &.top-paperclip {
+                  i {
+                    width: 27px;
+                    height: 25px;
+                    left: 7px;
+                    background: url("../../assets/home/association.png") no-repeat center;
+                    background-size: cover;
+                  }
+                }
+
+                &.top-scissors {
+                  i {
+                    width: 26px;
+                    height: 25px;
+                    left: 7px;
+                    background: url("../../assets/home/scissors.png") no-repeat center;
+                    background-size: cover;
+                  }
+                }
+              }
+
+              .detail-save {
+                margin-left: 12px;
+                height: 32px;
+                line-height: 32px;
+                border-radius: 16px;
+                opacity: 1;
+                border: 1px solid #008ED3;
+                padding: 0 24px;
+                text-align: center;
+                font-size: 14px;
+                color: #ffffff;
+                min-width: 80px;
+                -webkit-box-sizing: border-box;
+                box-sizing: border-box;
+                -webkit-transition: .3s ease-out;
+                transition: .3s ease-out;
+                cursor: pointer;
+                background: #008ED3;
+
+                &:hover {
+                  opacity: 0.5;
+                }
+              }
+            }
 
             .img {
               margin: 0 auto;

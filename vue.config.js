@@ -16,7 +16,7 @@ module.exports = {
     )
   },
   chainWebpack: config => {
-    console.log('----------------------------------------------')
+    // console.log('----------------------------------------------')
     // config.module.rule('css').test(/\.(woff|ttf)(\?.*)?$/).use('url-loader').loader('url-loader').option({ name: 'resources/fonts/[name].[ext]' })
     // config.module.rules.push({
     //   test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
@@ -30,8 +30,8 @@ module.exports = {
   devServer: {
     proxy: {
       '/api': {
-        // target: 'http://192.168.1.121:4502/',
-        target: 'http://192.168.8.149:4502/',
+        target: 'http://192.168.1.121:4503/',
+        // target: 'http://192.168.8.149:4502/',
         changeOrigin: true,
         logLevel: 'debug',
         pathRewrite: {
@@ -39,6 +39,7 @@ module.exports = {
         }
       },
       '/aem': {
+        // target: 'http://192.168.1.121:4503/',
         target: 'http://localhost:4502/',
         auth: 'admin:admin',
         changeOrigin: true,
@@ -52,6 +53,6 @@ module.exports = {
     watchOptions: {
       poll: true
     },
-    writeToDisk: true
+    writeToDisk: false
   }
 }

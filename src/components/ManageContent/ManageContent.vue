@@ -305,7 +305,7 @@
       <!--      </span>-->
       <!--      </el-dialog>-->
     </div>
-    <CreateFolderDialog :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id" @finish="createFolderFinish"/>
+    <CreateFolderDialog v-if="dialogAddFolderVisible" :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id" @finish="createFolderFinish"/>
     <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="hasSelectData" @finish="deleteAsset"/>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
@@ -330,10 +330,8 @@ import zteStore from '@/store'
 import { mapState, mapActions } from 'pinia'
 import {
   getTree,
-  getJSON,
   folderTree,
-  searchPopularTag,
-  createFolderByAem, downloadZip
+  searchPopularTag, downloadZip
 } from '@/api/api'
 import {
   columnPath,
@@ -559,6 +557,10 @@ export default {
       })
     },
     async handleDownload () {
+      if (this.$refs.table.selection.some(i => i.metadata && 'prism:expirationDate' in i.metadata && dayjs().isAfter(dayjs(i.metadata['prism:expirationDate'])))) {
+        this.$message.error('此素材已到期，请联系管理员')
+        return
+      }
       try {
         this.loading = true
         const length = this.$refs.table.selection.length

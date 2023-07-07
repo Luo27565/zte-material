@@ -43,8 +43,14 @@
 </template>
 
 <script>
-import { createFolderByAem, getJSON } from '@/api/api'
+import { createFolderByAem, folderPermission, getJSON } from '@/api/api'
 import dayjs from 'dayjs'
+
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default {
   name: 'CreateFolderDialog',
@@ -61,7 +67,8 @@ export default {
   watch: {
     'form.folderName': {
       handler (newVal) {
-        newVal.includes('/') && (this.form.folderName = this.form.folderName.replace(/\//g, ''))
+        const regex = /[/%\\:*?"[\]|.#{}^;+ ]/g
+        regex.test(newVal) && (this.form.folderName = this.form.folderName.replace(regex, ''))
       },
       deep: true
     }
@@ -129,14 +136,25 @@ export default {
           formData.append('./jcr:content/jcr:primaryType', 'nt:unstructured')
           formData.append('_charset_', 'UTF-8')
           formData.append('./jcr:content/folderMetadataSchema', '')
-          formData.append('./jcr:content/dc:sort', this.form.sort || dayjs().format('YYYY-MM-DD HH:mm:ss'))
+          formData.append('./jcr:content/dc:sort', this.form.sort ? dayjs(this.form.sort).format() : dayjs().format())
           formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
           const res = await createFolderByAem(`${this.path}/${this.form.folderName}`, formData)
           if (res['status.code'] === 200 || res['status.code'] === 201) {
-            this.$message({
-              message: '创建成功',
-              type: 'success'
-            })
+            const formData = new FormData()
+            formData.append('filePath', `${this.path}/${this.form.folderName}`)
+            formData.append('permission', this.form.permission)
+            const status = await folderPermission(formData)
+            if (status.status === 200 && status.success) {
+              this.$message({
+                message: '创建成功',
+                type: 'success'
+              })
+            } else {
+              this.$message({
+                message: status.errorMessage,
+                type: 'warning'
+              })
+            }
             this.$emit('finish')
           } else {
             this.$message({

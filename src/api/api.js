@@ -85,3 +85,6 @@ export const detailByAssetId = id => get(`/bin/zte/asset/id/detail?assetId=${id}
 
 // 多资产打包下载
 export const downloadZip = url => post(`${url}`, {}, true, true)
+
+// 文件夹权限设置
+export const folderPermission = formData => post('/bin/zte/asset/folder/permission', formData)
