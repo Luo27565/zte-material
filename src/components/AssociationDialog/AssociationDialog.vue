@@ -88,7 +88,10 @@ export default {
               message: '相关成功',
               type: 'success'
             })
-            this.$emit('finish')
+            this.$emit('finish', {
+              relatedFileName: this.form.relatedFileName,
+              relatedFilePath: this.form.relatedFilePath
+            })
             this.handleClose()
           } else {
             this.$message.error('相关失败')

@@ -520,7 +520,7 @@
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="[{...detailData}]" :file-name="detailData.name"
             @change="handleMove"/>
     <choose-dialog :visible.sync="visibleCoverImage" :filter-type="fileTypeOptions[0].type" @finish="handleCoverImage"/>
-    <AssociationDialog :visible.sync="visibleAssociation" @finish="init"/>
+    <AssociationDialog :visible.sync="visibleAssociation" @finish="handleAssociationDialog"/>
   </el-drawer>
 </template>
 
@@ -999,6 +999,18 @@ export default {
     handlePathName () {
       const regex = /[/%\\:*?"[\]|.#{}^;+ ]/g
       regex.test(this.detailData.pathName) && (this.detailData.pathName = this.detailData.pathName.replace(regex, ''))
+    },
+    handleAssociationDialog (related) {
+      const {
+        relatedFileName,
+        relatedFilePath
+      } = related
+      const flag = {
+        key: relatedFilePath,
+        showName: relatedFileName,
+        'sling:resource': relatedFilePath
+      }
+      this.relateds = [...this.relateds, flag]
     },
     async closeDrawer (type) {
       if (type === 'save' || type === 'saveAndClose') {
