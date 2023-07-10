@@ -163,4 +163,9 @@ export default {
 .el-tooltip__popper[x-placement^=bottom] .popper__arrow {
   border-bottom-color: rgb(250, 115, 105);
 }
+
+.delete-asset-btn {
+  background-color: rgb(220, 85, 75) !important;
+  border-color: rgb(220, 85, 75) !important;
+}
 </style>
