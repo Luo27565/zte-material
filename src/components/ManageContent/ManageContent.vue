@@ -195,7 +195,7 @@
               <template slot-scope="scope">
                 <span
                   v-if="scope.row.metadata && ('jcr:title' in scope.row.metadata||'dc:title' in scope.row.metadata)">
-                  {{ scope.row.metadata['jcr:title'] || scope.row.metadata['dc:title'] || scope.row.name }}
+                  {{ scope.row.metadata['dc:title'] || scope.row.metadata['jcr:title'] || scope.row.name }}
                 </span>
                 <span v-else>{{
                     scope.row.properties ? scope.row.properties['jcr:title'] ? scope.row.properties['jcr:title'] : scope.row.name : scope.row.name

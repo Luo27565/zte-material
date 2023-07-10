@@ -33,22 +33,27 @@
       </template>
     </el-table-column>
     <el-table-column
-      prop="name"
-      label="名称">
+      label="标题/名称">
       <template slot-scope="scope">
-        <div class="name" @click="jump(scope.row)">{{ scope.row.name }}</div>
-      </template>
-    </el-table-column>
-    <el-table-column
-      width="280"
-      label="标题">
-      <template slot-scope="scope">
-                <span v-if="scope.row.metadata">
-                  {{ scope.row.metadata['jcr:title'] || scope.row.metadata['dc:title'] }}
+                <span
+                  v-if="scope.row.metadata && ('jcr:title' in scope.row.metadata||'dc:title' in scope.row.metadata)">
+                  {{ scope.row.metadata['dc:title'] || scope.row.metadata['jcr:title'] || scope.row.name }}
                 </span>
-        <span v-else>{{ scope.row.properties ? scope.row.properties['jcr:title'] : '' }}</span>
+        <span v-else>{{
+            scope.row.properties ? scope.row.properties['jcr:title'] ? scope.row.properties['jcr:title'] : scope.row.name : scope.row.name
+          }}</span>
       </template>
     </el-table-column>
+    <!--    <el-table-column-->
+    <!--      width="280"-->
+    <!--      label="标题">-->
+    <!--      <template slot-scope="scope">-->
+    <!--                <span v-if="scope.row.metadata">-->
+    <!--                  {{ scope.row.metadata['jcr:title'] || scope.row.metadata['dc:title'] }}-->
+    <!--                </span>-->
+    <!--        <span v-else>{{ scope.row.properties ? scope.row.properties['jcr:title'] : '' }}</span>-->
+    <!--      </template>-->
+    <!--    </el-table-column>-->
     <el-table-column
       prop="tagsText"
       label="标签">
@@ -87,14 +92,21 @@
     </el-table-column>
     <el-table-column
       width="240"
-      label="修改时间">
+      label="上传时间">
       <template slot-scope="scope">
         <template v-if="scope.row.properties">
           <div style="display: flex;flex-direction: column;">
-            <span>{{ scope.row.properties['jcr:lastModified'] | formatLastModifiedTime }}</span>
-            <span>{{ scope.row.properties['jcr:lastModifiedBy'] }}{{ showSelect ? 1 : 2 }}</span>
+            <span>{{ scope.row.nodeProperties['jcr:created'] | formatLastModifiedTime }}</span>
+            <!--            <span>{{ scope.row.properties['jcr:lastModifiedBy'] }}{{ showSelect ? 1 : 2 }}</span>-->
           </div>
         </template>
+      </template>
+    </el-table-column>
+    <el-table-column label="到期状态" width="100">
+      <template slot-scope="scope">
+                <span v-if="scope.row.metadata&&'prism:expirationDate' in scope.row.metadata">{{
+                    scope.row.metadata['prism:expirationDate'] | expiresWhetherFormat
+                  }}</span>
       </template>
     </el-table-column>
     <detail-drawer :drawer.sync="detailDrawer" :all-detail-data="[detailData]" :detail="detailData"/>

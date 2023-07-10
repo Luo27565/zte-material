@@ -110,15 +110,15 @@
                     </div>
                     <div class="item-li">
                       <span class="item-li-title">版权时间：</span>
-                      <span>{{ detailData.metadata['prism:expirationDate'] }}</span>
+                      <span>{{ detailData.metadata['prism:expirationDate'] | formatDate }}</span>
                     </div>
                     <div class="item-li">
                       <span class="item-li-title">版权来源：</span>
                       <span>{{ detailData.metadata['dc:source'] | formatSource }}</span>
                     </div>
                     <div class="item-li">
-                      <span class="item-li-title">创建时间：</span>
-                      <span>{{ detailData.metadata['dam:extracted'] | formatDate }}</span>
+                      <span class="item-li-title">上传时间：</span>
+                      <span>{{ detailData.nodeProperties['jcr:created'] | formatDate }}</span>
                     </div>
                     <div class="item-li">
                       <span class="item-li-title">最后修改时间：</span>
@@ -695,6 +695,10 @@ export default {
             display: flex;
             align-items: center;
             margin: 0 -5px;
+
+            /deep/ .is-disabled span {
+              background: #DDDDDD !important;
+            }
 
             /deep/ .el-button {
               -webkit-box-flex: 0;
