@@ -57,15 +57,34 @@ export default {
         })
         this.$emit('finish')
       } catch (e) {
-        this.errorData = e
-        this.$nextTick(() => {
-          const message = (document.getElementById('Message').innerHTML).split('。')[0]
-          this.$message({
-            message: `${message}`,
-            type: 'error'
+        this.handleClose()
+        this.$confirm('一个或多个项目处于被引用和/或已激活状态。', '强制删除', {
+          type: 'error',
+          confirmButtonText: '删除',
+          confirmButtonClass: 'delete-asset-btn'
+        }).then(async () => {
+          const formData = new FormData()
+          formData.append('cmd', 'deletePage')
+          this.list.forEach(e => {
+            formData.append('path', e.path)
           })
-          this.handleClose()
+          formData.append('force', 'true')
+          await command(formData)
+          this.$message({
+            message: '删除成功',
+            type: 'success'
+          })
+          this.$emit('finish')
         })
+        // this.errorData = e
+        // this.$nextTick(() => {
+        //   const message = (document.getElementById('Message').innerHTML).split('。')[0]
+        //   this.$message({
+        //     message: `${message}`,
+        //     type: 'error'
+        //   })
+        //   this.handleClose()
+        // })
       } finally {
         this.loading = false
       }
