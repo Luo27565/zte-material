@@ -136,8 +136,8 @@ export default {
           formData.append('./jcr:content/jcr:primaryType', 'nt:unstructured')
           formData.append('_charset_', 'UTF-8')
           formData.append('./jcr:content/folderMetadataSchema', '')
-          formData.append('./jcr:content/dc:sort', this.form.sort ? dayjs(this.form.sort).format() : dayjs().format())
-          formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
+          formData.append('./jcr:content/dc:sort', this.form.sort ? this.form.sort : dayjs().format('YYYY-MM-DD HH:mm:ss'))
+          formData.append('./jcr:content/dc:sort@TypeHint', 'String')
           const res = await createFolderByAem(`${this.path}/${this.form.folderName}`, formData)
           if (res['status.code'] === 200 || res['status.code'] === 201) {
             const formData = new FormData()
