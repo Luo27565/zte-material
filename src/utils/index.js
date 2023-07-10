@@ -1,6 +1,6 @@
 // baseUrl /aem
 // export const baseUrl = '/aem'
-export const baseUrl = '/aem'
+export const baseUrl = ''
 
 // 素材管理tag的路径
 export const assetManagementUrl = '/content/cq:tags/popular-tags'
