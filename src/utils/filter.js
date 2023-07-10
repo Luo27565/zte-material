@@ -74,7 +74,7 @@ Vue.filter('formatSource', value => value ? sourceOptions.find(e => e.value === 
 
 Vue.filter('formatDate', date => {
   let ret = ''
-  let fmt = 'YYYY-mm-dd HH:MM'
+  let fmt = 'YYYY-mm-dd HH:MM:SS'
   if (!date) return ''
   date = new Date(date)
   const opt = {

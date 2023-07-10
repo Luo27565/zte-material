@@ -1,6 +1,6 @@
 // baseUrl /aem
 // export const baseUrl = '/aem'
-export const baseUrl = ''
+export const baseUrl = '/aem'
 
 // 素材管理tag的路径
 export const assetManagementUrl = '/content/cq:tags/popular-tags'
@@ -18,32 +18,32 @@ export const defaultBreadcrumb = [{
 export const gallery = {
   label: '图库',
   key: 'gallery',
-  url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-images'
-  // url: '/content/dam/asset-management/copyright-images'
+  // url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-images'
+  url: '/content/dam/asset-management/copyright-images'
 }
 
 // 视频api
 export const video = {
   label: '视频',
   key: 'video',
-  url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-video'
-  // url: '/content/dam/asset-management/copyright-video'
+  // url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-video'
+  url: '/content/dam/asset-management/copyright-video'
 }
 
 // 字体api
 export const font = {
   label: '字体',
   key: 'font',
-  url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-fonts'
-  // url: '/content/dam/asset-management/copyright-fonts'
+  // url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyright-fonts'
+  url: '/content/dam/asset-management/copyright-fonts'
 }
 
 // 音乐api
 export const music = {
   label: '音乐',
   key: 'music',
-  url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyrighted-music'
-  // url: '/content/dam/asset-management/copyrighted-music'
+  // url: '/mnt/overlay/granite/ui/content/tree.0.html/content/dam/asset-management/copyrighted-music'
+  url: '/content/dam/asset-management/copyrighted-music'
 }
 
 // 人像有无
@@ -302,7 +302,7 @@ export const compositionOptions = [{
 // filter
 export const types = {
   image: 'image/bmp;image/jpeg;image/png;image/tiff;image/gif;image/vnd.adobe.photoshop;image/webp',
-  video: '', // application/vnd.rn-realmedia-vbr;video/mp4;application/vnd.rn-realmedia;video/3gpp;
+  video: 'application/vnd.rn-realmedia-vbr;video/mp4;application/vnd.rn-realmedia;video/3gpp;video/x-m4v;video/x-ms-vob;video/x-matroska;video/x-flv;video/quicktime;video/x-msvideo;video/3gpp',
   music: '',
   font: 'application/x-font-woff;application/x-font-ttf',
   file: ''
