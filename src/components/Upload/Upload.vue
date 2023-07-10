@@ -374,10 +374,10 @@ export default {
 /deep/ .el-drawer__header {
   font-size: 20px;
   color: #222222;
-  padding: 24px 28px 0 24px;
+  padding: 12px 28px 0 24px;
   line-height: 28px;
   font-weight: 400;
-  margin-bottom: 40px;
+  margin-bottom: 12px;
 }
 
 .container {
