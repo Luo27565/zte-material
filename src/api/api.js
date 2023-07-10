@@ -88,3 +88,6 @@ export const downloadZip = url => post(`${url}`, {}, true, true)
 
 // 文件夹权限设置
 export const folderPermission = formData => post('/bin/zte/asset/folder/permission', formData)
+
+// 重命名资产
+export const renameFolder = formData => post('/bin/zte/asset/rename', formData)

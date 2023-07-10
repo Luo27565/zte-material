@@ -240,12 +240,12 @@
             </el-table-column>
             <!--            width="200"-->
             <el-table-column
-              label="修改时间">
+              label="上传时间">
               <template slot-scope="scope">
                 <template v-if="scope.row.properties">
                   <div style="display: flex;flex-direction: column;">
-                    <span>{{ scope.row.properties['jcr:lastModified'] | formatLastModifiedTime }}</span>
-                    <span>{{ scope.row.properties['jcr:lastModifiedBy'] }}</span>
+                    <span>{{ scope.row.nodeProperties['jcr:created'] | formatLastModifiedTime }}</span>
+                    <!--                    <span>{{ scope.row.properties['jcr:lastModifiedBy'] }}</span>-->
                   </div>
                 </template>
               </template>
@@ -305,7 +305,8 @@
       <!--      </span>-->
       <!--      </el-dialog>-->
     </div>
-    <CreateFolderDialog v-if="dialogAddFolderVisible" :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id" @finish="createFolderFinish"/>
+    <CreateFolderDialog v-if="dialogAddFolderVisible" :visible.sync="dialogAddFolderVisible" :path="lastCrumb.id"
+                        @finish="createFolderFinish"/>
     <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="hasSelectData" @finish="deleteAsset"/>
     <drawer :drawer.sync="showDrawer" :title="drawerTitle" :selectData="drawerSelectData"
             @finish="handleCopyAndMove"/>
@@ -406,7 +407,9 @@ export default {
       if (this.searchForm.updateTime) {
         res = [...res.filter(e => e.properties).filter(i => i.properties['jcr:lastModified']).filter(v => dayjs(v.properties['jcr:lastModified']).isBetween(this.searchForm.updateTime[0], dayjs(this.searchForm.updateTime[1])))]
       }
-      return res
+      const assets = res.filter(i => i.nodeType === 'dam:Asset')
+      const file = res.filter(i => i.nodeType === 'sling:Folder' || i.nodeType === 'sling:OrderedFolder')
+      return [...file, ...assets]
     }
   },
   mounted () {

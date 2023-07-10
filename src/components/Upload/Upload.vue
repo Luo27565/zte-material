@@ -326,7 +326,8 @@ export default {
         this.fileList = [...this.fileList.map(e => ({
           ...e,
           status: e.uid === file.uid ? 'success' : e.status,
-          response: e.uid === file.uid ? res : e.response
+          response: e.uid === file.uid ? res : e.response,
+          finish: e.uid === file.uid ? true : e.finish
         }))]
       }).catch(rej => {
         const {
@@ -337,10 +338,18 @@ export default {
           ...e,
           status: e.uid === file.uid ? 'fail' : e.status,
           response: e.uid === file.uid ? response : e.response,
-          percentage: e.uid === file.uid ? code === 'ERR_CANCELED' ? -2 : -1 : e.percentage
+          percentage: e.uid === file.uid ? code === 'ERR_CANCELED' ? -2 : -1 : e.percentage,
+          finish: e.uid === file.uid ? true : e.finish
         }))]
       }).finally(() => {
         this.loading = false
+        if (this.fileList.every(i => i.finish)) {
+          if (this.fileList.some(i => i.percentage === -1)) {
+            this.$message.error('上传失败')
+          } else {
+            this.$message.success('上传成功')
+          }
+        }
       })
     }
   }

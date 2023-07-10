@@ -3,132 +3,139 @@
              :with-header="withHeader"
              :destroy-on-close="destroyOnClose"
              :direction="direction" :size="size" class="detail-wrap">
-    <div class="drawer-top">
-      <div class="drawer-top-cnt">
-        <div class="top-btn">
-          <div v-permission="assetRole" class="btn" :class="item.className" v-for="item in topBtn" :key="item.icon"
-               v-show="item.show"
-               @click="handleBtn(item.icon)">
-            <i :class="item.icon"/>
-            {{ item.label }}
-          </div>
-        </div>
-        <div class="btn detail-close" @click="closeDrawer">
-          关闭
-        </div>
-      </div>
-    </div>
-    <div class="drawer-bottom-wrap">
-      <div class="drawer-bottom">
-        <div class="drawer-bottom-cnt">
-          <div class="info-item">
-            <div class="info-title">
-              {{ detailData.showName }}
-            </div>
-            <div class="info-last">
-              <div class="prve-btn" @click="handleChange('sub')" :class="index==1?'disable':''">
-                <i class="el-icon-arrow-left"/>
-                上一张
-              </div>
-              <!--          {{ index }} 个/共 {{ total }} 个资产-->
-              <div class="next-btn" @click="handleChange('add')" :class="index==total?'disable':''">
-                下一张
-                <i class="el-icon-arrow-right"/>
-              </div>
+    <template v-if="drawer">
+      <div class="drawer-top">
+        <div class="drawer-top-cnt">
+          <div class="top-btn">
+            <div v-permission="assetRole" class="btn" :class="item.className" v-for="item in topBtn" :key="item.icon"
+                 v-show="item.show"
+                 @click="handleBtn(item.icon)">
+              <i :class="item.icon"/>
+              {{ item.label }}
             </div>
           </div>
-          <div class="info-content">
-            <div class="info-img">
-              <template v-if="detailData.type==='video/mp4'||detailData.type==='audio/mpeg'">
-                <video-player :options="videoOptions" class="video-player-box" :playsinline="true"></video-player>
-              </template>
-              <template v-else>
-                <el-image v-if="detailData.renditions" :src="`${baseUrl}${detailData.renditions.detail}`" fit="contain">
-                  <div slot="error" class="image-slot">
-                    <i class="el-icon-document" style="font-size: 120px;color: #323232"></i>
-                  </div>
-                </el-image>
-              </template>
-            </div>
-            <div class="info-list">
-              <!--            <p class="info-label">基本信息</p>-->
-              <div class="list-item" v-if="detailData.metadata">
-                <!--              <div>-->
-                <!--                <span>ID：</span>-->
-                <!--                {{ detailData.assetId }}-->
-                <!--              </div>-->
-                <div class="info-btn">
-                  <template v-if="downLoadBtn">
-                    <el-button style="width: 100%" :disabled="isExpiresDisabled" type="primary" @click="handleDownload('original')">下载当前图片
-                    </el-button>
-                  </template>
-                  <template v-else>
-                    <el-button type="primary" :disabled="isExpiresDisabled" style="width: 48%"
-                               @click="handleDownload('original')">下载当前图片
-                    </el-button>
-                    <el-button type="primary" style="width: 48%" @click="handleDownload('related')"
-                               :disabled="isExpiresDisabled"
-                               class="associated-download">下载关联文件
-                      <i v-if="relateds.length>1" class="el-icon-arrow-down"/>
-                    </el-button>
-                  </template>
-                </div>
-                <div class="item-ul" v-if="isExpiresDisabled">
-                  <div class="item-li">
-                    <span style="color: #999999;">此素材已到期，请联系管理员</span>
-                  </div>
-                </div>
-                <div class="info-list-label">
-                  <!--                <span>标签：</span>-->
-                  <!--                {{ showTag(detailData.metadata['cq:tags']) }}-->
-                  <ul>
-                    <li v-for="(item, index) in showTag(detailData.metadata['cq:tags'])" :key="index"><span>{{
-                        item
-                      }}</span></li>
-                  </ul>
-                </div>
-                <div class="item-ul">
-                  <div class="item-li" v-show="detailData.metadata['tiff:ImageWidth']">
-                    <span class="item-li-title">尺寸：</span>
-                    <span>{{
-                        `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}`
-                      }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">存储大小：</span>
-                    <span>{{ detailData.metadata['dam:size'] | formatSize }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">授权范围：</span>
-                    <span>{{ detailData.metadata['dc:authorizationScope'] | formatAuthorizationScope }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">版权时间：</span>
-                    <span>{{ detailData.metadata['prism:expirationDate'] }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">版权来源：</span>
-                    <span>{{ detailData.metadata['dc:source'] | formatSource }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">创建时间：</span>
-                    <span>{{ detailData.metadata['dam:extracted'] | formatDate }}</span>
-                  </div>
-                  <div class="item-li">
-                    <span class="item-li-title">最后修改时间：</span>
-                    <span>{{ detailData.properties['jcr:lastModified'] | formatDate }}</span>
-                  </div>
-                  <div class="item-li dec-wrap">
-                    <span class="item-li-title">描述：</span>
-                    <span>{{ detailData.metadata['dc:description'] }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="btn detail-close" @click="closeDrawer">
+            关闭
           </div>
         </div>
       </div>
-    </div>
+      <div class="drawer-bottom-wrap">
+        <div class="drawer-bottom">
+          <div class="drawer-bottom-cnt">
+            <div class="info-item">
+              <div class="info-title">
+                {{ detailData.showName }}
+              </div>
+              <div class="info-last">
+                <div class="prve-btn" @click="handleChange('sub')" :class="index==1?'disable':''">
+                  <i class="el-icon-arrow-left"/>
+                  上一张
+                </div>
+                <!--          {{ index }} 个/共 {{ total }} 个资产-->
+                <div class="next-btn" @click="handleChange('add')" :class="index==total?'disable':''">
+                  下一张
+                  <i class="el-icon-arrow-right"/>
+                </div>
+              </div>
+            </div>
+            <div class="info-content">
+              <div class="info-img">
+                <template v-if="detailData.type==='video/mp4'||detailData.type==='audio/mpeg'">
+                  <video-player :options="videoOptions" class="video-player-box" :playsinline="true"></video-player>
+                </template>
+                <template v-else>
+                  <el-image v-if="detailData.renditions"
+                            :src="`${baseUrl}${detailData.metadata&&'dc:coverImage' in detailData.metadata?detailData.metadata['dc:coverImage']: detailData.renditions.detail}`"
+                            fit="contain">
+                    <div slot="error" class="image-slot">
+                      <img v-if="detailData.metadata && 'dc:coverImage' in detailData.metadata"
+                           :src="`${baseUrl}${detailData.metadata['dc:coverImage']}`"/>
+                      <i v-else class="el-icon-document" style="font-size: 120px;color: #323232"></i>
+                    </div>
+                  </el-image>
+                </template>
+              </div>
+              <div class="info-list">
+                <!--            <p class="info-label">基本信息</p>-->
+                <div class="list-item" v-if="detailData.metadata">
+                  <!--              <div>-->
+                  <!--                <span>ID：</span>-->
+                  <!--                {{ detailData.assetId }}-->
+                  <!--              </div>-->
+                  <div class="info-btn">
+                    <template v-if="downLoadBtn">
+                      <el-button style="width: 100%" :disabled="isExpiresDisabled" type="primary"
+                                 @click="handleDownload('original')">下载当前图片
+                      </el-button>
+                    </template>
+                    <template v-else>
+                      <el-button type="primary" :disabled="isExpiresDisabled" style="width: 48%"
+                                 @click="handleDownload('original')">下载当前图片
+                      </el-button>
+                      <el-button type="primary" style="width: 48%" @click="handleDownload('related')"
+                                 :disabled="isExpiresDisabled"
+                                 class="associated-download">下载关联文件
+                        <i v-if="relateds.length>1" class="el-icon-arrow-down"/>
+                      </el-button>
+                    </template>
+                  </div>
+                  <div class="item-ul" v-if="isExpiresDisabled">
+                    <div class="item-li">
+                      <span style="color: #999999;">此素材已到期，请联系管理员</span>
+                    </div>
+                  </div>
+                  <div class="info-list-label">
+                    <!--                <span>标签：</span>-->
+                    <!--                {{ showTag(detailData.metadata['cq:tags']) }}-->
+                    <ul>
+                      <li v-for="(item, index) in showTag(detailData.metadata['cq:tags'])" :key="index"><span>{{
+                          item
+                        }}</span></li>
+                    </ul>
+                  </div>
+                  <div class="item-ul">
+                    <div class="item-li" v-show="detailData.metadata['tiff:ImageWidth']">
+                      <span class="item-li-title">尺寸：</span>
+                      <span>{{
+                          `${detailData.metadata['tiff:ImageWidth']} x ${detailData.metadata['tiff:ImageLength']}`
+                        }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">存储大小：</span>
+                      <span>{{ detailData.metadata['dam:size'] | formatSize }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">授权范围：</span>
+                      <span>{{ detailData.metadata['dc:authorizationScope'] | formatAuthorizationScope }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">版权时间：</span>
+                      <span>{{ detailData.metadata['prism:expirationDate'] }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">版权来源：</span>
+                      <span>{{ detailData.metadata['dc:source'] | formatSource }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">创建时间：</span>
+                      <span>{{ detailData.metadata['dam:extracted'] | formatDate }}</span>
+                    </div>
+                    <div class="item-li">
+                      <span class="item-li-title">最后修改时间：</span>
+                      <span>{{ detailData.properties['jcr:lastModified'] | formatDate }}</span>
+                    </div>
+                    <div class="item-li dec-wrap">
+                      <span class="item-li-title">描述：</span>
+                      <span>{{ detailData.metadata['dc:description'] }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
     <select-dialog :visible.sync="visible" :detail-data="detailData" :path="detailData.path"
                    @finish="getAsset(detailData.path)"/>
     <list-dialog :visible.sync="visibleList" :file-path="detailData.path" :related-file-path="pathList" :name="nameList"

@@ -210,7 +210,7 @@
                           <el-form-item label="创建者">
                             <el-input v-model="senior.creator"></el-input>
                           </el-form-item>
-                          <el-form-item label="封面图" v-show="metadata.type==='video/mp4'">
+                          <el-form-item label="封面图" v-show="showCoverImg">
                             <div class="cover-image">
                               <el-input class="input" v-model="senior.coverImage"></el-input>
                               <div class="icon" @click="handleBtn('el-icon-coverImage')"><i
@@ -543,7 +543,7 @@ import {
   assetBatchEdit,
   assetDetail,
   assetEdit,
-  editFolder, folderPermission,
+  editFolder, folderPermission, renameFolder,
   searchPopularTag
 } from '@/api/api'
 import { dateFormat } from '@/utils/tools'
@@ -598,6 +598,12 @@ export default {
     drawer,
     ChooseDialog,
     AssociationDialog
+  },
+  computed: {
+    showCoverImg: function () {
+      const arr = ['video/mp4', 'application/x-font-woff', 'application/x-font-ttf']
+      return arr.some(i => i === this.metadata.type)
+    }
   },
   data () {
     const checkTag = (rule, value, callback) => {
@@ -708,16 +714,16 @@ export default {
       personShown: [],
       loading: false,
       metadataFormRules: {
-        title: [{
-          required: true,
-          message: '名称不能为空',
-          trigger: 'blur'
-        }],
-        description: [{
-          required: true,
-          message: '描述不能为空',
-          trigger: 'blur'
-        }]
+        // title: [{
+        //   required: true,
+        //   message: '名称不能为空',
+        //   trigger: 'blur'
+        // }],
+        // description: [{
+        //   required: true,
+        //   message: '描述不能为空',
+        //   trigger: 'blur'
+        // }]
       },
       metadata: {
         title: '',
@@ -1128,6 +1134,17 @@ export default {
           }
         }
         // 修改路径
+        if (this.detailData.name !== this.detailData.pathName) {
+          const formData = new FormData()
+          formData.append('filePath', this.detailData.path)
+          formData.append('fileName', this.detailData.pathName)
+          const res = await renameFolder(formData)
+          if (res.status !== 200 && res.success) {
+            this.$message.error(
+              `修改路径名称失败，${res.errorMessage}`
+            )
+          }
+        }
         if (this.detailData.permission !== this.detailData.properties.permission) {
           const formData = new FormData()
           formData.append('filePath',
