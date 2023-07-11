@@ -536,7 +536,7 @@ import {
   authorizationScopeCheckBox,
   fileTypeOptions,
   compositionOptions,
-  whetherRecommendedOptions, colorOptions, typeOfCopyrightOptions
+  whetherRecommendedOptions, colorOptions, typeOfCopyrightOptions, types
 } from '@/utils'
 import {
   addTag,
@@ -601,7 +601,10 @@ export default {
   },
   computed: {
     showCoverImg: function () {
-      const arr = ['video/mp4', 'application/x-font-woff', 'application/x-font-ttf']
+      const video = types.video.split(';')
+      const music = types.music.split(';')
+      const font = types.font.split(';')
+      const arr = [...video, ...music, ...font]
       return arr.some(i => i === this.metadata.type)
     }
   },

@@ -5,8 +5,8 @@ import { defaultBreadcrumb } from '@/utils'
 const zteStore = defineStore('zte', {
   state: () => {
     return {
-      // assetRole: sessionStorage.getItem('assetRole') !== 'true',
-      assetRole: sessionStorage.getItem('assetRole') === 'true',
+      assetRole: sessionStorage.getItem('assetRole') !== 'true',
+      // assetRole: sessionStorage.getItem('assetRole') === 'true',
       selected: '',
       breadcrumb: [],
       treeData: [],

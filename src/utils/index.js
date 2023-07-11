@@ -303,7 +303,7 @@ export const compositionOptions = [{
 export const types = {
   image: 'image/bmp;image/jpeg;image/png;image/tiff;image/gif;image/vnd.adobe.photoshop;image/webp',
   video: 'application/vnd.rn-realmedia-vbr;video/mp4;application/vnd.rn-realmedia;video/3gpp;video/x-m4v;video/x-ms-vob;video/x-matroska;video/x-flv;video/quicktime;video/x-msvideo;video/3gpp',
-  music: '',
+  music: 'audio/x-ms-wma;audio/x-aac;audio/x-flac;audio/x-wav;audio/mpeg',
   font: 'application/x-font-woff;application/x-font-ttf',
   file: ''
 }

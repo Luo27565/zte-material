@@ -40,7 +40,7 @@
             </div>
             <div class="info-content">
               <div class="info-img">
-                <template v-if="detailData.type==='video/mp4'||detailData.type==='audio/mpeg'">
+                <template v-if="showVideo(detailData.type)">
                   <video-player :options="videoOptions" class="video-player-box" :playsinline="true"></video-player>
                 </template>
                 <template v-else>
@@ -65,12 +65,12 @@
                   <div class="info-btn">
                     <template v-if="downLoadBtn">
                       <el-button style="width: 100%" :disabled="isExpiresDisabled" type="primary"
-                                 @click="handleDownload('original')">下载当前图片
+                                 @click="handleDownload('original')">下载当前文件
                       </el-button>
                     </template>
                     <template v-else>
                       <el-button type="primary" :disabled="isExpiresDisabled" style="width: 48%"
-                                 @click="handleDownload('original')">下载当前图片
+                                 @click="handleDownload('original')">下载当前文件
                       </el-button>
                       <el-button type="primary" style="width: 48%" @click="handleDownload('related')"
                                  :disabled="isExpiresDisabled"
@@ -146,7 +146,7 @@
 </template>
 
 <script>
-import { baseUrl } from '@/utils'
+import { baseUrl, types } from '@/utils'
 import dayjs from 'dayjs'
 import '@/utils/filter'
 import { downloadByGet } from '@/api'
@@ -203,6 +203,10 @@ export default {
     total: function () {
       return this.allDetailData.length
     },
+    showVideo: function () {
+      const arr = types.video.split(';')
+      return type => arr.some(i => i === type)
+    },
     downLoadBtn: function () {
       return this.relateds.length === 0
     },
@@ -218,7 +222,7 @@ export default {
         fluid: true, // 当true时，Video.js player将拥有流体大小。换句话说，它将按比例缩放以适应其容器。
         sources: [
           {
-            type: this.detailData.type, // 类型
+            // type: this.detailData.type, // 类型
             src: `${baseUrl}${this.detailData.path}` // url地址
           }
         ],
