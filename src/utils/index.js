@@ -210,6 +210,11 @@ export const fileTypeOptions = [{
   className: 'select-font',
   value: 'font',
   type: 'application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;application/pdf;text/html;text/rtf;text/plain;application/vnd.openxmlformats-officedocument.wordprocessingml.document;text/csv;application/vnd.oasis.opendocument.presentation;application/vnd.ms-excel;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.oasis.opendocument.presentation;application/vnd.ms-powerpoint;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/x-indesign;application/postscript;application/pdf;application.vnd.quark.quarkxpress;application/x-tar-gz;application/java-archive;application/x-tar;application/zip;application/x-rar-compressed'
+}, {
+  label: '文件',
+  className: 'select-file',
+  value: 'file',
+  type: ''
 }]
 
 // 图片视频字体音乐
@@ -268,11 +273,11 @@ export const colorOptions = [{
 
 // 是否推荐
 export const whetherRecommendedOptions = [{
-  label: '否',
-  value: 'false'
-}, {
   label: '是',
   value: 'true'
+}, {
+  label: '否',
+  value: 'false'
 }]
 
 // 版权类型
@@ -305,5 +310,29 @@ export const types = {
   video: 'application/vnd.rn-realmedia-vbr;video/mp4;application/vnd.rn-realmedia;video/3gpp;video/x-m4v;video/x-ms-vob;video/x-matroska;video/x-flv;video/quicktime;video/x-msvideo;video/3gpp',
   music: 'audio/x-ms-wma;audio/x-aac;audio/x-flac;audio/x-wav;audio/mpeg',
   font: 'application/x-font-woff;application/x-font-ttf',
-  file: ''
+  file: 'application/zip'
 }
+
+// 排序
+export const sortOptions = [{
+  label: '下载',
+  value: 'download'
+}]
+
+// 搜索的文件类型
+export const searchFileType = [{
+  label: '图片',
+  value: 'image'
+}, {
+  label: '视频',
+  value: 'video'
+}, {
+  label: '音频',
+  value: 'music'
+}, {
+  label: '字体',
+  value: 'font'
+}, {
+  label: '文件',
+  value: 'file'
+}]

@@ -245,6 +245,7 @@ export default {
       this.$emit('close', this.uploaded)
       this.fileList = []
       this.uploaded = false
+      this.uploadType = 'file'
       const flag = {
         source: '',
         authorizationScope: [],

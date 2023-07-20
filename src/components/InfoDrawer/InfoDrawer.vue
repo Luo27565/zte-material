@@ -1113,8 +1113,8 @@ export default {
         formData.append('./jcr:content/jcr:primaryType', 'nt:unstructured')
         formData.append('_charset_', 'UTF-8')
         formData.append('./jcr:content/folderMetadataSchema', '')
-        formData.append('./jcr:content/dc:sort', sort ? dayjs(sort).format() : '')
-        formData.append('./jcr:content/dc:sort@TypeHint', 'Date')
+        formData.append('./jcr:content/dc:sort', sort || '')
+        formData.append('./jcr:content/dc:sort@TypeHint', 'String')
         const res = await editFolder(path, formData)
         if (res['status.code'] === 200) {
           this.$message.success('成功 已成功提交表单')

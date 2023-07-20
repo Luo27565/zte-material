@@ -168,4 +168,8 @@ export default {
   background-color: rgb(220, 85, 75) !important;
   border-color: rgb(220, 85, 75) !important;
 }
+
+.popular-tags-popper {
+  border-radius: 32px !important;
+}
 </style>

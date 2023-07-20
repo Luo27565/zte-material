@@ -53,6 +53,10 @@
                       <i v-else class="el-icon-document" style="font-size: 120px;color: #323232"></i>
                     </div>
                   </el-image>
+                  <div v-if="showMusic(detailData.type)" style="margin-top: 24px;width: 100%;">
+                    <audio style="width: 100%;" controls :src="`${baseUrl}${this.detailData.path}`" preload="metadata"
+                           controlslist="noplaybackrate nodownload"/>
+                  </div>
                 </template>
               </div>
               <div class="info-list">
@@ -205,6 +209,10 @@ export default {
     },
     showVideo: function () {
       const arr = types.video.split(';')
+      return type => arr.some(i => i === type)
+    },
+    showMusic: function () {
+      const arr = types.music.split(';')
       return type => arr.some(i => i === type)
     },
     downLoadBtn: function () {
@@ -660,6 +668,7 @@ export default {
           height: 100%;
           box-sizing: border-box;
           padding-right: 2.2917vw;
+          flex-direction: column;
 
           /deep/ .el-image {
             width: 100%;

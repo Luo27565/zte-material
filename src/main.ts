@@ -43,12 +43,14 @@ import {
   InputNumber,
   CheckboxGroup,
   Checkbox,
+  CheckboxButton,
   Tag,
   Collapse,
   CollapseItem,
   Divider,
   RadioGroup,
-  Radio
+  Radio,
+  RadioButton
 } from 'element-ui'
 // @ts-ignore
 import VueVideoPlayer from 'vue-video-player'
@@ -95,6 +97,7 @@ Vue.use(DatePicker)
 Vue.use(InputNumber)
 Vue.use(CheckboxGroup)
 Vue.use(Checkbox)
+Vue.use(CheckboxButton)
 Vue.use(Tag)
 Vue.use(CollapseItem)
 Vue.use(Collapse)
@@ -102,6 +105,7 @@ Vue.use(Divider)
 Vue.use(Directives)
 Vue.use(RadioGroup)
 Vue.use(Radio)
+Vue.use(RadioButton)
 
 Vue.prototype.$msgbox = MessageBox
 Vue.prototype.$alert = MessageBox.alert

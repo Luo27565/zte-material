@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <el-select v-model="select" class="select" :popper-append-to-body="false"
-    @change="changeClass" ref="selectName" data-class="select-all">
+               @change="changeClass" ref="selectName" data-class="select-all">
       <el-option
         v-for="item in selectData"
         :key="item.value"
@@ -42,7 +42,8 @@ export default {
       this.$router.push({
         path,
         query: {
-          search: this.select,
+          search: '',
+          fileType: this.select,
           keywords: this.input
         }
       })

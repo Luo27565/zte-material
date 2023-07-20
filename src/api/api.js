@@ -14,6 +14,9 @@ export const searchPopularTag = (tagPath = '/content/cq:tags/popular-tags') => g
 // 标签新增
 export const addTag = (url, formData) => post(url, formData)
 
+// 标签删除
+export const deleteTag = formData => post('/bin/zte/tag/delete', formData)
+
 // 查询资产
 export const searchAsset = params => get('/bin/zte/asset/search', params)
 
@@ -91,3 +94,6 @@ export const folderPermission = formData => post('/bin/zte/asset/folder/permissi
 
 // 重命名资产
 export const renameFolder = formData => post('/bin/zte/asset/rename', formData)
+
+// 分享文件夹
+export const share = formData => post('/bin/zte/asset/folder/sharing', formData)

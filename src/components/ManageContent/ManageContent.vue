@@ -78,6 +78,46 @@
               </div>
             </el-popover>
           </div>
+          <div class="filter-item">
+            <el-select v-model="searchForm.recommend" clearable placeholder="是否推荐">
+              <el-option
+                v-for="item in recommendSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="filter-item user-list">
+            <el-select v-model="searchForm.composition" clearable placeholder="构图">
+              <el-option
+                v-for="item in compositionSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <el-select v-model="searchForm.color" clearable placeholder="色彩">
+              <el-option
+                v-for="item in colorSelect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </div>
+          <!--          <div class="filter-item user-list">-->
+          <!--            <el-select v-model="searchForm.sort" clearable placeholder="排序">-->
+          <!--              <el-option-->
+          <!--                v-for="item in sortSelect"-->
+          <!--                :key="item.value"-->
+          <!--                :label="item.label"-->
+          <!--                :value="item.value">-->
+          <!--              </el-option>-->
+          <!--            </el-select>-->
+          <!--          </div>-->
           <!--          <div class="filter-item">-->
           <!--            <el-popover-->
           <!--              placement="bottom"-->
@@ -100,7 +140,21 @@
         </div>
         <div class="search-container">
           <search class="left-content"/>
+          <div class="total-text">共
+            <span>{{ filterListData.length }}</span>
+            个结果
+          </div>
           <div class="right-content">
+            <el-dropdown trigger="click" @command="handleSort">
+              <el-button type="primary" size="mini" class="btn all-btn">
+                <div class="button"><i class="el-icon-sort search-icon"/>按{{ searchForm.sort ? '下载' : '默认' }}排序
+                </div>
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="default" :disabled="!searchForm.sort">默认</el-dropdown-item>
+                <el-dropdown-item command="download" :disabled="searchForm.sort==='download'">下载</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
             <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog"
                        class="btn create-folder">
               <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
@@ -165,6 +219,12 @@
             @selection-change="handleSelectionChange"
             :row-style="{height:'48px'}"
             :data="filterListData">
+            <template slot="empty">
+              <div style="display: flex;flex-direction: column;align-items: center;">
+                <img alt="empty" src="../../assets/home/empty.png"/>
+                <span style="color: #3D3D3D;font-weight: 400;font-size: 14px;margin-top: -24px;">暂无文件</span>
+              </div>
+            </template>
             <el-table-column
               type="selection"
               align="center"
@@ -314,6 +374,7 @@
     <folderUpload :dialog-visible.sync="showFolderUpload" @finish="refresh" :exist-data="listViewData"/>
     <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
                    @move="handleDetailToMove"/>
+    <ShareDialog :visible.sync="showShareDialog" :share-data="shareDialogData"/>
     <!--    <div style="display: none" v-html="errorData"></div>-->
   </div>
 
@@ -327,6 +388,7 @@ import folderUpload from '@/components/FolderUpload/FolderUpload.vue'
 import detailDrawer from '@/components/DetailDrawer/DetailDrawer'
 import DeleteDialog from '@/components/DeleteDialog/DeleteDialog'
 import CreateFolderDialog from '@/components/CreateFolderDialog/CreateFolderDialog'
+import ShareDialog from '@/components/ShareDialog/ShareDialog'
 import zteStore from '@/store'
 import { mapState, mapActions } from 'pinia'
 import {
@@ -340,7 +402,12 @@ import {
   portraitOptions,
   authorizationScopeCheckBox,
   sourceOptions,
-  fileTypeOptions, propertyReleaseStatusOptions
+  fileTypeOptions,
+  propertyReleaseStatusOptions,
+  whetherRecommendedOptions,
+  colorOptions,
+  compositionOptions,
+  sortOptions
 } from '@/utils'
 import '@/utils/filter'
 import dayjs from 'dayjs'
@@ -360,7 +427,8 @@ export default {
     detailDrawer,
     folderUpload,
     DeleteDialog,
-    CreateFolderDialog
+    CreateFolderDialog,
+    ShareDialog
   },
   computed: {
     ...mapState(zteStore, ['assetRole', 'selected', 'breadcrumb', 'lastCrumb']),
@@ -407,7 +475,23 @@ export default {
       if (this.searchForm.updateTime) {
         res = [...res.filter(e => e.properties).filter(i => i.properties['jcr:lastModified']).filter(v => dayjs(v.properties['jcr:lastModified']).isBetween(this.searchForm.updateTime[0], dayjs(this.searchForm.updateTime[1])))]
       }
-      const assets = res.filter(i => i.nodeType === 'dam:Asset')
+      if (this.searchForm.recommend) {
+        if (this.searchForm.recommend === 'true') {
+          res = [...res.filter(e => e.metadata).filter(i => i.metadata['dc:recommend'] === this.searchForm.recommend)]
+        } else {
+          res = [...res.filter(e => !e.metadata || !('dc:recommend' in e.metadata) || e.metadata['dc:recommend'] === this.searchForm.recommend)]
+        }
+      }
+      if (this.searchForm.composition) {
+        res = [...res.filter(e => e.metadata).filter(i => i.metadata['dc:composition'] === this.searchForm.composition)]
+      }
+      if (this.searchForm.color) {
+        res = [...res.filter(e => e.metadata).filter(i => i.metadata['dc:color'] === this.searchForm.color)]
+      }
+      let assets = res.filter(i => i.nodeType === 'dam:Asset')
+      if (this.searchForm.sort) {
+        assets = [...assets.filter(i => i.metadata && 'dc:download' in i.metadata).sort((a, b) => b.metadata['dc:download'] - a.metadata['dc:download']), ...assets.filter(i => !i.metadata || !('dc:download' in i.metadata))]
+      }
       const file = res.filter(i => i.nodeType === 'sling:Folder' || i.nodeType === 'sling:OrderedFolder')
       return [...file, ...assets]
     }
@@ -440,13 +524,15 @@ export default {
       showUpdateTime: false,
       showUploadBox: false,
       showDownloadBox: false,
+      showShareDialog: false,
+      shareDialogData: null,
       showAuthorizationDuration: false,
       dateValueFormat: 'yyyy-MM-dd HH:mm:ss',
       drawerTitle: 'move',
       drawerSelectData: [],
       detailArr: [],
       detailData: {},
-      dataflole: [],
+      // dataflole: [],
       selectData: [{
         label: '图片',
         value: 0
@@ -471,6 +557,14 @@ export default {
       sourceSelect: sourceOptions,
       // 授权范围
       scopeAuthorizationSelect: authorizationScopeCheckBox,
+      // 是否推荐
+      recommendSelect: whetherRecommendedOptions,
+      // 构图
+      compositionSelect: compositionOptions.filter(i => i.value),
+      // 色彩
+      colorSelect: colorOptions,
+      // 排序
+      sortSelect: sortOptions,
       searchForm: {
         fileType: '',
         portrait: null,
@@ -478,7 +572,11 @@ export default {
         source: null,
         scopeAuthorization: '',
         durationAuthorization: '',
-        updateTime: ''
+        updateTime: '',
+        recommend: '',
+        composition: '',
+        color: '',
+        sort: ''
       },
       input: '',
       settingBtn: [{
@@ -496,6 +594,10 @@ export default {
       }, {
         icon: 'el-icon-info',
         label: '属性',
+        show: true
+      }, {
+        icon: 'el-icon-share',
+        label: '分享',
         show: true
       }, {
         icon: 'el-icon-edit-outline',
@@ -543,7 +645,16 @@ export default {
       command === 'el-icon-copy-document' && this.handleCopy()
       command === 'el-icon-info' && this.handleJump()
       command === 'download' && this.handleDownload()
+      command === 'el-icon-share' && this.handleShare()
       // console.log(command)
+    },
+    handleShare () {
+      const [flag] = this.$refs.table.selection
+      this.shareDialogData = flag
+      this.showShareDialog = true
+    },
+    handleSort (command) {
+      this.$set(this.searchForm, 'sort', command === 'download' ? command : '')
     },
     handleJump () {
       const { path } = this.$route
@@ -608,7 +719,10 @@ export default {
         source: null,
         scopeAuthorization: '',
         durationAuthorization: '',
-        updateTime: ''
+        updateTime: '',
+        recommend: '',
+        composition: '',
+        color: ''
       }
       this.loading = true
       try {
@@ -625,6 +739,11 @@ export default {
         const last = results.filter(e => !e.metadata || !('dc:sort' in e.metadata) || !e.metadata['dc:sort'])
         this.listViewData = [...first.sort((a, b) => b.sort - a.sort), ...last]
       } finally {
+        const recommend = sessionStorage.getItem('recommend')
+        if (recommend) {
+          this.searchForm.recommend = recommend
+          sessionStorage.removeItem('recommend')
+        }
         this.loading = false
       }
     },
@@ -691,7 +810,7 @@ export default {
     handleSelectionChange (selection) {
       this.settingBtn = [...this.settingBtn.map(e => ({
         ...e,
-        show: e.icon === 'el-icon-info' ? selection.length === 1 || selection.every(e => e.nodeType === 'dam:Asset') : e.show
+        show: e.icon === 'el-icon-info' ? selection.length === 1 || selection.every(e => e.nodeType === 'dam:Asset') : e.icon === 'el-icon-share' ? selection.length === 1 : e.show
       }))]
       this.showDownloadBox = selection.length === 0 ? false : selection.every(e => e.nodeType === 'dam:Asset')
     },
@@ -815,13 +934,26 @@ export default {
     .search-filter-container {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      //align-items: center;
 
       .search-container {
         box-sizing: border-box;
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: space-between;
+        //justify-content: flex-end;
         padding-left: 20px;
+
+        .total-text {
+          font-size: 14px;
+          font-weight: 400;
+          color: #666666;
+
+          span {
+            color: #222222;
+          }
+        }
 
         .left-content {
           display: flex;
@@ -832,7 +964,7 @@ export default {
           position: absolute;
           top: 14px;
           right: 260px;
-          z-index: 1999;
+          z-index: 2130;
           background: #ffffff;
 
           /deep/ .input {
@@ -972,6 +1104,17 @@ export default {
                   display: none;
                 }
               }
+
+              .el-icon-sort {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background: url("../../assets/home/sort.png") no-repeat center;
+
+                &:before {
+                  display: none;
+                }
+              }
             }
 
             &.all-btn {
@@ -1045,11 +1188,13 @@ export default {
 
       .filter-container {
         display: flex;
-        flex-wrap: nowrap;
+        //flex-wrap: nowrap;
+        flex-wrap: wrap;
         flex: 1;
         overflow: hidden;
         overflow-x: overlay;
         position: relative;
+        margin-top: 12px;
 
         &::-webkit-scrollbar {
           height: 6px;

@@ -1,7 +1,9 @@
 <template>
   <el-drawer :title="title" @open="init" :visible="drawer" :with-header="withHeader" :destroy-on-close="destroyOnClose"
              :direction="direction" :size="size" class="search-box">
-    <div class="search-box-wrap">
+    <div class="search-box-wrap" v-loading="loading" element-loading-text="加载中..."
+         element-loading-spinner="el-icon-loading"
+         element-loading-background="rgba(0, 0, 0, 0.8)">
       <div class="search-location">
         <div class="path">
           <div class="path-title">搜索位置</div>
@@ -15,169 +17,160 @@
             {{ item.title }} {{ item.label }}
           </el-tag>
         </div>
-        <el-select v-show="false" class="select" v-model="showSelect" @change="handleTags('showSelect')">
-          <el-option
-            v-for="item in showOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-        <el-collapse v-show="false">
-          <el-collapse-item title="文件类型" name="1">
-            <template slot="title">
-              <div class="search-filter-label">文件类型</div>
-            </template>
-            <div class="search-filter-item">
-              <el-checkbox-group
-                v-model="searchForm.fileType">
-                <el-checkbox v-for="item in fileTypeOptions" :label="item.value" :key="item.value">
-                  {{ item.label }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="人像" name="2">
-            <template slot="title">
-              <div class="search-filter-label">人像</div>
-            </template>
-            <div class="search-filter-item">
-              <div>人像有无</div>
-              <el-select v-model="searchForm.portrait" class="search-select" clearable placeholder="">
-                <el-option
-                  v-for="item in portraitOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-              <div>模特图像公开</div>
-              <el-select v-model="searchForm.minorModelImageDisclosure" class="search-select" clearable placeholder="">
-                <el-option
-                  v-for="item in minorModelImageDisclosureOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="资产授权状态" name="3">
-            <template slot="title">
-              <div class="search-filter-label">资产授权状态</div>
-            </template>
-            <div class="search-filter-item">
-              <el-select v-model="searchForm.propertyReleaseStatus" class="search-select" clearable placeholder="">
-                <el-option
-                  v-for="item in propertyReleaseStatusOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="来源" name="4">
-            <template slot="title">
-              <div class="search-filter-label">来源</div>
-            </template>
-            <div class="search-filter-item">
-              <el-select v-model="searchForm.source" class="search-select" clearable placeholder="">
-                <el-option
-                  v-for="item in sourceOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="授权范围" name="5">
-            <template slot="title">
-              <div class="search-filter-label">授权范围</div>
-            </template>
-            <div class="search-filter-item">
-              <el-checkbox-group
-                v-model="searchForm.authorizationScope">
-                <el-checkbox v-for="item in authorizationScopeCheckBox" :label="item.value" :key="item.value">
-                  {{ item.label }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="授权期限" name="6">
-            <template slot="title">
-              <div class="search-filter-label">授权期限</div>
-            </template>
-            <div class="search-filter-item">
-              <div>结束与以下时间之后</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.authorizationDurationStart"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-              <div>结束与以下时间之前</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.authorizationDurationEnd"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-            </div>
-          </el-collapse-item>
-          <el-collapse-item title="修改时间" name="7">
-            <template slot="title">
-              <div class="search-filter-label">修改时间</div>
-            </template>
-            <div class="search-filter-item">
-              <div>修改与以下时间之后</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.updateTimeStart"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-              <div>修改与以下时间之前</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.updateTimeEnd"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-              <div>创建与以下时间之后</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.startTime"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-              <div>创建与以下时间之前</div>
-              <el-date-picker
-                class="search-select"
-                v-model="searchForm.endTime"
-                type="datetime"
-                placeholder="">
-              </el-date-picker>
-            </div>
-          </el-collapse-item>
-        </el-collapse>
+        <!--        <el-select v-show="false" class="select" v-model="showSelect" @change="handleTags('showSelect')">-->
+        <!--          <el-option-->
+        <!--            v-for="item in showOptions"-->
+        <!--            :key="item.value"-->
+        <!--            :label="item.label"-->
+        <!--            :value="item.value">-->
+        <!--          </el-option>-->
+        <!--        </el-select>-->
+        <div class="search-container">
+          <el-collapse v-model="activeCollapse">
+            <el-collapse-item title="文件类型" name="fileType">
+              <template slot="title">
+                <div class="search-filter-label">文件类型</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleFileType"
+                  v-model="searchForm.fileType">
+                  <el-checkbox-button v-for="item in searchFileType" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="人像" name="portrait">
+              <template slot="title">
+                <div class="search-filter-label">人像</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('portrait',$event)"
+                  v-model="searchForm.portrait">
+                  <el-checkbox-button v-for="item in portraitOptions" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="来源" name="source">
+              <template slot="title">
+                <div class="search-filter-label">来源</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('source',$event)"
+                  v-model="searchForm.source">
+                  <el-checkbox-button v-for="item in sourceOptions" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="授权范围" name="scopeAuthorization">
+              <template slot="title">
+                <div class="search-filter-label">授权范围</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('scopeAuthorization',$event)"
+                  v-model="searchForm.scopeAuthorization">
+                  <el-checkbox-button v-for="item in authorizationScopeCheckBox" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="授权期限" name="durationAuthorization">
+              <template slot="title">
+                <div class="search-filter-label">授权期限</div>
+              </template>
+              <div class="search-filter-item">
+                <el-date-picker
+                  :value-format="dateValueFormat"
+                  prefix-icon="el-icon-date"
+                  align="center"
+                  v-model="searchForm.prismExpirationDateStart"
+                  type="datetime"
+                  @change="handleDatePicker('prismExpirationDateStart',$event)"
+                  :picker-options="pickerOptionsStart"
+                  placeholder="选择开始日期">
+                </el-date-picker>
+                <el-date-picker
+                  :value-format="dateValueFormat"
+                  style="margin-top: 8px;"
+                  prefix-icon="el-icon-date"
+                  align="center"
+                  @change="handleDatePicker('prismExpirationDateEnd',$event)"
+                  :picker-options="pickerOptionsEnd"
+                  v-model="searchForm.prismExpirationDateEnd"
+                  type="datetime"
+                  placeholder="选择结束日期">
+                </el-date-picker>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="是否推荐" name="recommend">
+              <template slot="title">
+                <div class="search-filter-label">是否推荐</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('recommend',$event)"
+                  v-model="searchForm.recommend">
+                  <el-checkbox-button v-for="item in whetherRecommendedOptions" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="构图" name="composition">
+              <template slot="title">
+                <div class="search-filter-label">构图</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('composition',$event)"
+                  v-model="searchForm.composition">
+                  <el-checkbox-button v-for="item in compositionOptions" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+            <el-collapse-item title="色彩" name="color">
+              <template slot="title">
+                <div class="search-filter-label">色彩</div>
+              </template>
+              <div class="search-filter-item">
+                <el-checkbox-group
+                  @change="handleCheckBox('color',$event)"
+                  v-model="searchForm.color">
+                  <el-checkbox-button v-for="item in colorOptions" :label="item.value" :key="item.value">
+                    {{ item.label }}
+                  </el-checkbox-button>
+                </el-checkbox-group>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
       </div>
       <div class="search-box-cnt">
         <div class="drawer-top">
           <div class="drawer-top-content">
-<!--            <el-tag v-for="item in tags" effect="dark" closable :key="item.value" style="margin-right: .5rem"-->
-<!--                    @close="deleteTags(item.type)">-->
-<!--              {{ item.title }} {{ item.label }}-->
-<!--            </el-tag>-->
+            <!--            <el-tag v-for="item in tags" effect="dark" closable :key="item.value" style="margin-right: .5rem"-->
+            <!--                    @close="deleteTags(item.type)">-->
+            <!--              {{ item.title }} {{ item.label }}-->
+            <!--            </el-tag>-->
             <el-input class="input" v-model="search" @keyup.enter.native=handleSearch clearable
                       placeholder="请输入"></el-input>
             <el-button type="primary" @click="handleSearch"><i class="el-icon-search"/>
             </el-button>
           </div>
           <div class="top-btn">
-<!--            <el-button type="primary" @click="handleSearch">搜索<i class="el-icon-search" style="margin-left: 8px"/>-->
-<!--            </el-button>-->
+            <!--            <el-button type="primary" @click="handleSearch">搜索<i class="el-icon-search" style="margin-left: 8px"/>-->
+            <!--            </el-button>-->
             <el-dropdown class="btn" v-show="showBtn" @command="handleCommand">
               <el-button class="search-operate" type="primary">
                 操作<i class="el-icon-arrow-down el-icon--right"></i>
@@ -193,26 +186,42 @@
           </div>
         </div>
         <div class="info-item">
-<!--          <div class="info-search" @click="showSearch=!showSearch">-->
-<!--            <i class="el-icon-set-up"/>{{ showSearch ? '筛选器' : '' }}-->
-<!--          </div>-->
-<!--          <div class="info-title">-->
-<!--            搜索结果-->
-<!--          </div>-->
+          <!--          <div class="info-search" @click="showSearch=!showSearch">-->
+          <!--            <i class="el-icon-set-up"/>{{ showSearch ? '筛选器' : '' }}-->
+          <!--          </div>-->
+          <!--          <div class="info-title">-->
+          <!--            搜索结果-->
+          <!--          </div>-->
           <div class="info-message">
             <div class="all-select" v-permission="assetRole" @click="handleAllSelect">
               <i class="el-icon-circle-check"/>
               全选
             </div>
-<!--            <div class="total">{{ viewData.length }}/{{ total }}</div>-->
-            <i :class="[viewType,'viewType']" :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"/>
+            <!--            <div class="total">{{ viewData.length }}/{{ total }}</div>-->
+            <div>
+              <el-dropdown trigger="click" @command="handleSort">
+                <el-button type="primary" size="mini" class="btn all-btn">
+                  <div class="button" style="display: flex;align-items: center;"><i
+                    class="el-icon-sort search-icon"/>按{{
+                      searchForm.sort ? searchForm.sort === 'download' ? '下载' : '最新上传' : '默认'
+                    }}排序
+                  </div>
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="default" :disabled="!searchForm.sort">默认</el-dropdown-item>
+                  <el-dropdown-item command="download" :disabled="searchForm.sort==='download'">下载</el-dropdown-item>
+                  <el-dropdown-item command="upload" :disabled="searchForm.sort==='upload'">最新上传
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+              <i style="margin-left: 32px;" :class="[viewType,'viewType']"
+                 :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"/>
+            </div>
             <!--        <i :class="[viewType,'viewType']" :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"-->
             <!--           @click="viewType = viewType === 'el-icon-s-grid' ? 'el-icon-picture' : 'el-icon-s-grid'"/>-->
           </div>
         </div>
-        <div class="info-content" v-loading="loading" element-loading-text="加载中..."
-             element-loading-spinner="el-icon-loading"
-             element-loading-background="rgba(0, 0, 0, 0.8)">
+        <div class="info-content">
           <div class="container" :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
             <TableView :show-select="assetRole" :table-data="viewData" @onScroll="handleSearch" @selected="handleBtn"
                        :total="total"
@@ -239,10 +248,17 @@
 <script>
 import {
   showOptions,
-  fileTypeOptions,
+  searchFileType,
   authorizationScopeCheckBox,
   portraitOptions,
-  minorModelImageDisclosureOptions, propertyReleaseStatusOptions, sourceOptions, defaultBreadcrumb
+  minorModelImageDisclosureOptions,
+  propertyReleaseStatusOptions,
+  sourceOptions,
+  defaultBreadcrumb,
+  whetherRecommendedOptions,
+  colorOptions,
+  compositionOptions,
+  types
 } from '@/utils'
 import SelectFolderDialog from '@/components/SelectFolderDialog/SelectFolderDialog'
 import TableView from '@/components/TableView/TableView'
@@ -316,27 +332,37 @@ export default {
       pathInput: '',
       showSelect: 'fileAndFolder',
       showOptions,
-      fileTypeOptions,
+      searchFileType,
       authorizationScopeCheckBox,
       portraitOptions,
       minorModelImageDisclosureOptions,
       propertyReleaseStatusOptions,
+      whetherRecommendedOptions,
+      colorOptions,
+      compositionOptions: compositionOptions.filter(i => i.value),
       sourceOptions,
       tags: [],
       showFolderSelect: false,
+      activeCollapse: ['fileType'],
+      dateValueFormat: 'yyyy-MM-dd HH:mm:ss',
       searchForm: {
         fileType: [],
-        authorizationScope: [],
-        portrait: '',
-        minorModelImageDisclosure: '',
-        propertyReleaseStatus: '',
-        source: '',
-        authorizationDurationStart: '',
-        authorizationDurationEnd: '',
-        updateTimeStart: '',
-        updateTimeEnd: '',
-        startTime: '',
-        endTime: ''
+        portrait: [],
+        source: [],
+        scopeAuthorization: [],
+        durationAuthorization: [],
+        prismExpirationDateStart: '',
+        prismExpirationDateEnd: '',
+        recommend: [],
+        composition: [],
+        color: [],
+        sort: ''
+      },
+      pickerOptionsStart: {
+        disabledDate: time => this.disabledDateStart(time)
+      },
+      pickerOptionsEnd: {
+        disabledDate: time => this.disabledDateEnd(time)
       },
       total: 0,
       viewData: [],
@@ -352,28 +378,55 @@ export default {
   },
   methods: {
     init () {
+      const flag = {
+        fileType: [],
+        portrait: [],
+        source: [],
+        scopeAuthorization: [],
+        durationAuthorization: [],
+        prismExpirationDateStart: '',
+        prismExpirationDateEnd: '',
+        recommend: [],
+        composition: [],
+        color: [],
+        sort: ''
+      }
       const {
         query: {
           search,
-          keywords
+          keywords,
+          pathInput,
+          fileType,
+          recommend,
+          sort
         }
       } = this.$route
-      const {
-        label,
-        value
-      } = fileTypeOptions.find(e => e.value === search)
-      search && (this.tags = [{
-        type: 'url',
-        label,
-        value
-      }])
+      fileType && (flag.fileType = [fileType])
+      recommend && (flag.recommend = [recommend])
+      recommend && (this.activeCollapse = [...this.activeCollapse, 'recommend'])
+      sort && (flag.sort = sort)
       this.search = keywords
+      this.pathInput = pathInput
+      pathInput && this.handleTags('pathInput')
+      this.searchForm = { ...flag }
       this.handleSearch()
     },
     async handleSearch (first = true) {
       first && (this.offset = 0);
       (first && !!this.$refs.table) && (this.$refs.table.disabled = false)
       this.loading = true
+      const searchType = this.searchForm.fileType.map(e => types[e]).join(';')
+      console.log(this.searchForm.portrait)
+      const portrait = this.searchForm.portrait.length ? this.searchForm.portrait[0] : ''
+      const source = this.searchForm.source.length ? this.searchForm.source[0] : ''
+      const authorizationScope = this.searchForm.scopeAuthorization.length ? this.searchForm.scopeAuthorization[0] : ''
+      const recommend = this.searchForm.recommend.length ? this.searchForm.recommend[0] : ''
+      const composition = this.searchForm.composition.length ? this.searchForm.composition[0] : ''
+      const color = this.searchForm.color.length ? this.searchForm.color[0] : ''
+      const sorObj = this.searchForm.sort === 'download' || this.searchForm.sort === 'upload' ? {
+        orderBy: this.searchForm.sort === 'download' ? 'jcr:content/metadata/dc:download' : 'jcr:created',
+        sortOrder: 'DESC'
+      } : {}
       try {
         const {
           results: {
@@ -383,7 +436,16 @@ export default {
         } = await searchAsset({
           name: this.search,
           parentPath: this.pathInput || defaultBreadcrumb[0].id,
-          fileType: this.tags.some(e => e.type === 'url') ? fileTypeOptions.find(e => e.value === this.tags.find(i => i.type === 'url').value).type : '',
+          fileType: searchType,
+          portrait,
+          source,
+          authorizationScope,
+          recommend,
+          composition,
+          color,
+          ...sorObj,
+          prismExpirationDateStart: this.searchForm.prismExpirationDateStart,
+          prismExpirationDateEnd: this.searchForm.prismExpirationDateEnd,
           offset: this.offset * 15,
           limit: 15
         })
@@ -407,6 +469,22 @@ export default {
       }
     },
     closeSearch () {
+      const flag = {
+        fileType: [],
+        portrait: [],
+        source: [],
+        scopeAuthorization: [],
+        durationAuthorization: [],
+        prismExpirationDateStart: '',
+        prismExpirationDateEnd: '',
+        recommend: [],
+        composition: [],
+        color: [],
+        sort: ''
+      }
+      this.searchForm = { ...flag }
+      this.activeCollapse = ['fileType']
+      this.tags = []
       const { path } = this.$route
       this.$router.push({ path })
     },
@@ -522,6 +600,52 @@ export default {
     async getTags () {
       const { results } = await searchPopularTag('/content/cq:tags/zte-asset-tags')
       this.tagsData = results
+    },
+    handleCheckBox (key, val) {
+      if (val.length > 1) {
+        const [_, b] = val
+        this.$set(this.searchForm, key, [b])
+      }
+      this.handleSearch()
+    },
+    handleFileType () {
+      this.handleSearch()
+    },
+    disabledDateStart (time) {
+      if (!this.searchForm.prismExpirationDateEnd) {
+        return false
+      }
+      const flag = new Date(this.searchForm.prismExpirationDateEnd).getTime()
+      const day = 24 * 60 * 60 * 1000
+      const offset = time.getTime() % day
+      return flag - time.getTime() - offset < 0
+    },
+    disabledDateEnd (time) {
+      if (!this.searchForm.prismExpirationDateStart) {
+        return false
+      }
+      const flag = new Date(this.searchForm.prismExpirationDateStart).getTime()
+      const day = 24 * 60 * 60 * 1000
+      const offset = time.getTime() % day
+      return time.getTime() - flag + offset < 0
+    },
+    handleDatePicker (key, val) {
+      const start = new Date(this.searchForm.prismExpirationDateStart)
+      const end = new Date(this.searchForm.prismExpirationDateEnd)
+      if (!val) {
+        this.handleSearch()
+        return
+      }
+      if (start.getTime() > end.getTime()) {
+        this.$message.error(key === 'prismExpirationDateStart' ? `开始日期不晚于 ${this.searchForm.prismExpirationDateEnd}` : `结束日期不早于 ${this.searchForm.prismExpirationDateStart}`)
+        this.$set(this.searchForm, key, '')
+      } else {
+        this.handleSearch()
+      }
+    },
+    handleSort (command) {
+      this.$set(this.searchForm, 'sort', command === 'download' ? command : command === 'upload' ? 'upload' : '')
+      this.handleSearch()
     }
   },
   mounted () {
@@ -542,25 +666,33 @@ export default {
 
   .search-box-wrap {
     display: flex;
+
     .search-location {
       -webkit-box-flex: 0;
       -webkit-flex: 0 0 304px;
       -ms-flex: 0 0 304px;
       flex: 0 0 304px;
       max-width: 304px;
-      padding: 28px 20px;
+      padding: 28px 0;
       box-sizing: border-box;
       background: #F7F8FA;
-      .path{
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+
+      .path {
+        padding: 0 20px;
+
         .path-title {
           font-size: 14px;
           color: #3D3D3D;
           line-height: 20px;
           padding-left: 15px;
         }
+
         .input-wrap {
           margin-top: 16px;
           position: relative;
+
           /deep/ .el-input__inner {
             height: 40px;
             background: #FFFFFF;
@@ -571,6 +703,7 @@ export default {
             white-space: nowrap;
             text-overflow: ellipsis;
           }
+
           .icon {
             width: 20px;
             height: 20px;
@@ -587,6 +720,7 @@ export default {
             }
           }
         }
+
         .el-tag--dark {
           margin-top: 16px;
           height: auto;
@@ -611,6 +745,17 @@ export default {
         }
       }
     }
+
+    .search-location::-webkit-scrollbar {
+      width: 8px;
+      background-color: #F7F8FA;
+    }
+
+    .search-location::-webkit-scrollbar-thumb {
+      background: #ccc; // 滑块颜色
+      border-radius: 5px; // 滑块圆角
+    }
+
     .search-box-cnt {
       width: calc(100% - 304px);
       padding: 0 20px;
@@ -639,7 +784,7 @@ export default {
             color: #222222;
 
             /deep/ .el-input__suffix {
-                right: 40px;
+              right: 40px;
 
               .el-input__clear {
                 font-size: 18px;
@@ -721,6 +866,7 @@ export default {
             margin: 0;
             border: 0;
             margin-left: 20px;
+
             /deep/ span {
               display: inline-block;
               height: 40px;
@@ -741,6 +887,82 @@ export default {
             }
           }
         }
+      }
+    }
+
+    .search-container {
+      margin-top: 16px;
+      //height: 66%;
+      //overflow-y: auto;
+
+      /deep/ .el-collapse {
+        border-top: unset;
+        border-bottom: unset;
+      }
+
+      /deep/ .el-collapse-item__header {
+        background-color: #F7F8FA;
+        display: flex;
+        padding: 0 1rem;
+        border-bottom: none;
+      }
+
+      /deep/ .el-collapse-item__arrow {
+        margin: 0 8px 0 0;
+        order: 1;
+      }
+
+      .search-filter-label {
+        order: 2;
+        font-size: 14px;
+        font-weight: 400;
+        color: #3D3D3D;
+      }
+
+      /deep/ .el-collapse-item__wrap {
+        background: unset;
+        border-bottom: unset;
+      }
+
+      /deep/ .el-radio-button__inner,
+      /deep/ .el-checkbox-button__inner {
+        border-radius: 16px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        padding: 8px 18px;
+        font-size: 14px;
+        font-weight: 400;
+        color: #666666;
+        box-shadow: unset;
+        border: 1px solid #CFD9E0;
+      }
+
+      /deep/ .el-collapse-item__content {
+        padding-bottom: 8px;
+        padding-left: 36px;
+        padding-right: 12px;
+      }
+
+      /deep/ .el-radio-button__orig-radio:checked + .el-radio-button__inner,
+      /deep/ .el-checkbox-button.is-checked .el-checkbox-button__inner {
+        background: #ECFAFF;
+        border: 1px solid #CDE6EF !important;
+        color: #008ED3;
+        box-shadow: unset;
+      }
+
+      /deep/ .el-checkbox-button.is-focus .el-checkbox-button__inner {
+        border-color: #CFD9E0;
+      }
+
+      /deep/ .el-input__inner {
+        border-radius: 16px;
+        height: 32px;
+        line-height: 32px;
+      }
+
+      /deep/ .el-input__icon {
+        line-height: 32px;
       }
     }
   }
@@ -916,12 +1138,6 @@ export default {
       }
     }
 
-    /deep/ .el-collapse-item__header {
-      background-color: rgb(235, 235, 235);
-      display: flex;
-      padding: 0 1rem;
-    }
-
     /deep/ .el-collapse-item__arrow {
       margin: 0 8px 0 0;
       color: #323232;
@@ -953,8 +1169,8 @@ export default {
 
   /deep/ .el-table {
     .el-table__body-wrapper {
-      overflow-y: auto!important;
-      height: calc(100vh - 261px)!important;
+      overflow-y: auto !important;
+      height: calc(100vh - 261px) !important;
 
       &::-webkit-scrollbar {
         width: 6px;
@@ -965,11 +1181,13 @@ export default {
         border-radius: 5px;
       }
     }
+
     .has-gutter {
       .el-table__cell {
         background-color: #F7F8FA;
       }
     }
+
     tbody {
       tr {
         &:hover {
@@ -977,6 +1195,7 @@ export default {
             background: #EFFAFF;
           }
         }
+
         .first-column {
           display: flex;
           align-items: center;
@@ -999,7 +1218,69 @@ export default {
 }
 
 .el-dialog__wrapper {
-  z-index: 2222!important;
-  background: rgba(0,0,0, 0.6);
+  z-index: 2222 !important;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/deep/ .btn {
+  height: 100%;
+
+  &.create-folder {
+    height: 32px;
+    font-size: 14px;
+    color: #3D3D3D;
+    background: transparent;
+    border-radius: 16px;
+    border: 0;
+    -webkit-transition: .3s ease-out;
+    transition: .3s ease-out;
+
+    &:hover {
+      background: #ECFAFF;
+    }
+
+    .el-icon-folder {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: url("../../assets/home/holdings.png") no-repeat center;
+
+      &:before {
+        display: none;
+      }
+    }
+
+    .el-icon-sort {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: url("../../assets/home/sort.png") no-repeat center;
+
+      &:before {
+        display: none;
+      }
+    }
+  }
+
+  &.all-btn {
+    display: flex !important;
+    align-items: center;
+    height: 32px;
+    font-size: 14px;
+    color: #3D3D3D;
+    background: transparent;
+    border-radius: 16px;
+    border: 0;
+    -webkit-transition: .3s ease-out;
+    transition: .3s ease-out;
+
+    i {
+      font-size: 20px;
+    }
+
+    &:hover {
+      background: #ECFAFF;
+    }
+  }
 }
 </style>
