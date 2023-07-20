@@ -51,19 +51,21 @@ Vue.filter('formatType', type => {
 })
 
 Vue.filter('formatLastModifiedTime', time => {
-  if (!time) return
-  const hour = dayjs(time).format('HH')
-  let flag
-  if (hour < 6) {
-    flag = '凌晨'
-  } else if (hour < 12) {
-    flag = '上午'
-  } else if (hour < 18) {
-    flag = '下午'
-  } else if (hour < 24) {
-    flag = '晚上'
-  }
-  return dayjs(time).format(`YYYY年M月D日 ${flag}hh:mm:ss`)
+  // if (!time) return
+  // const hour = dayjs(time).format('HH')
+  // let flag
+  // if (hour < 6) {
+  //   flag = '凌晨'
+  // } else if (hour < 12) {
+  //   flag = '上午'
+  // } else if (hour < 18) {
+  //   flag = '下午'
+  // } else if (hour < 24) {
+  //   flag = '晚上'
+  // }
+  // return dayjs(time).format(`YYYY年M月D日 ${flag}hh:mm:ss`)
+  if (!time) return ''
+  return dayjs(time).format('YYYY/MM/DD HH:mm')
 })
 
 Vue.filter('formatTime', time => dayjs(time).format('YYYY-MM-DD HH:MM'))
