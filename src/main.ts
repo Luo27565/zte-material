@@ -50,7 +50,8 @@ import {
   Divider,
   RadioGroup,
   Radio,
-  RadioButton
+  RadioButton,
+  InfiniteScroll
 } from 'element-ui'
 // @ts-ignore
 import VueVideoPlayer from 'vue-video-player'
@@ -106,6 +107,7 @@ Vue.use(Directives)
 Vue.use(RadioGroup)
 Vue.use(Radio)
 Vue.use(RadioButton)
+Vue.use(InfiniteScroll)
 
 Vue.prototype.$msgbox = MessageBox
 Vue.prototype.$alert = MessageBox.alert

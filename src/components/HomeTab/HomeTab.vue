@@ -48,9 +48,11 @@
           <template v-else-if="tabs.recommend==='2'||tabs.recommend==='3'">
             <div class="video-content">
               <div class="video-item" v-for="music in tabsData.recommendData" :key="music.assetId"
+                   :style="{background:tabs.download==='2'?'#FFF8E5':'rgba(218,252,211,0.2)'}"
                    @click="handleJump(music)">
                 <img style="width: 100%;height: 100%;"
                      :src="`${baseUrl}${music.metadata&&'dc:coverImage' in music.metadata?music.metadata['dc:coverImage']:music.renditions.original}`"
+                     @error="handleError(tabs.download==='2'?'music':'font',$event)"
                      :alt="music.name"/>
                 <div v-if="tabs.recommend==='2'" class="video-title double-line">
                   <audio preload="meta" @canplay="handleMusicLoad('recommendData',music)"
@@ -109,7 +111,7 @@
                    @click="handleJump(video)">
                 <video width="100%" height="100%" preload="metadata" notSupportedMessage="此视频暂无法播放，请稍后再试"
                        :poster="`${(video.metadata && 'dc:coverImage' in video.metadata)? video.metadata['dc:coverImage'].startsWith('http') ? video.metadata['dc:coverImage'] : `${baseUrl}${video.metadata['dc:coverImage']}` : ''}`"
-                       @canplay="handleVideoLoad('downloadData',vidx,video)"
+                       @canplay="handleVideoLoad('downloadData',vidx,video)" @error="handleVideoError"
                        :ref="video.assetId">
                   <source :src="`${baseUrl}${video.path}`">
                 </video>
@@ -126,9 +128,11 @@
           <template v-else-if="tabs.download==='2'||tabs.download==='3'">
             <div class="video-content">
               <div class="video-item" v-for="music in tabsData.downloadData" :key="music.assetId"
+                   :style="{background:tabs.download==='2'?'#FFF8E5':'rgba(218,252,211,0.2)'}"
                    @click="handleJump(music)">
                 <img style="width: 100%;height: 100%;"
                      :src="`${baseUrl}${music.metadata&&'dc:coverImage' in music.metadata?music.metadata['dc:coverImage']:music.renditions.original}`"
+                     @error="handleError(tabs.download==='2'?'music':'font',$event)"
                      :alt="music.name"/>
                 <div v-if="tabs.download==='2'" class="video-title double-line">
                   <audio preload="meta" @canplay="handleMusicLoad('downloadData',music)"
@@ -204,9 +208,11 @@
           <template v-else-if="tabs.news==='2'||tabs.news==='3'">
             <div class="video-content">
               <div class="video-item" v-for="music in tabsData.newsData" :key="music.assetId"
+                   :style="{background:tabs.download==='2'?'#FFF8E5':'rgba(218,252,211,0.2)'}"
                    @click="handleJump(music)">
                 <img style="width: 100%;height: 100%;"
                      :src="`${baseUrl}${music.metadata&&'dc:coverImage' in music.metadata?music.metadata['dc:coverImage']:music.renditions.original}`"
+                     @error="handleError(tabs.download==='2'?'music':'font',$event)"
                      :alt="music.name"/>
                 <div v-if="tabs.news==='2'" class="video-title double-line">
                   <audio preload="meta" @canplay="handleMusicLoad('newsData',music)"
@@ -263,7 +269,12 @@ export default {
       2: types.music,
       3: types.font
     }
+    const musicIcon = 'data:image/png;base64,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'
+    const fontIcon = 'data:image/png;base64,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'
+
     return {
+      musicIcon,
+      fontIcon,
       loading: false,
       tabList: [gallery, video, music, font],
       tab: 0,
@@ -546,6 +557,13 @@ export default {
       //   id: second.path
       // }])
       // this.setSelected(second.path)
+    },
+    handleError (type, event) {
+      event.target.src = type === 'music' ? this.musicIcon : this.fontIcon
+      event.target.classList.add('error-icon')
+    },
+    handleVideoError (event) {
+      console.log(event)
     }
   },
   created () {
@@ -725,6 +743,9 @@ export default {
             border-radius: 0.8333vw;
             overflow: hidden;
             line-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             video {
               object-fit: fill;
@@ -846,6 +867,14 @@ export default {
           overflow: hidden;
           line-height: 0;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .error-icon {
+            height: auto !important;
+            width: auto !important;
+          }
 
           video {
             object-fit: fill;

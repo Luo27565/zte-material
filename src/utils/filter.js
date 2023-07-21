@@ -2,11 +2,33 @@ import Vue from 'vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
-import { authorizationScopeCheckBox, sourceOptions } from '@/utils/index'
+import { authorizationScopeCheckBox, sourceOptions, types } from '@/utils/index'
 
 dayjs.locale('zh-cn')
 
 dayjs.extend(relativeTime)
+
+const image = types.image.split(';').reduce((obj, item) => {
+  obj[item] = '图片'
+  return obj
+}, {})
+const video = types.video.split(';').reduce((obj, item) => {
+  obj[item] = '视频'
+  return obj
+}, {})
+const music = types.music.split(';').reduce((obj, item) => {
+  obj[item] = '音频'
+  return obj
+}, {})
+const font = types.font.split(';').reduce((obj, item) => {
+  obj[item] = '字体'
+  return obj
+}, {})
+const file = types.file.split(';').reduce((obj, item) => {
+  obj[item] = '文件'
+  return obj
+}, {})
+const total = { ...image, ...video, ...music, ...font, ...file }
 
 Vue.filter('formatSize', size => {
   if (!size) return ''
@@ -30,21 +52,22 @@ Vue.filter('formatName', name => name ? name.substring(0, name.lastIndexOf('.'))
 
 Vue.filter('formatType', type => {
   if (type) {
-    const str = type.substring(0, type.lastIndexOf('/')).toUpperCase()
-    const last = type.substring(type.lastIndexOf('/') + 1, type.length)
-    if (last.includes('x-font')) {
-      return last.substring(last.lastIndexOf('-') + 1, last.length).toUpperCase()
-    } else {
-      let flag = {}
-      flag[str] = str
-      flag = {
-        ...flag,
-        APPLICATION: 'DOCUMENT',
-        VIDEO: 'MULTIMEDIA',
-        AUDIO: 'MULTIMEDIA'
-      }
-      return flag[str]
-    }
+    return total[type] ?? ''
+    // const str = type.substring(0, type.lastIndexOf('/')).toUpperCase()
+    // const last = type.substring(type.lastIndexOf('/') + 1, type.length)
+    // if (last.includes('x-font')) {
+    //   return last.substring(last.lastIndexOf('-') + 1, last.length).toUpperCase()
+    // } else {
+    //   let flag = {}
+    //   flag[str] = str
+    //   flag = {
+    //     ...flag,
+    //     APPLICATION: 'DOCUMENT',
+    //     VIDEO: 'MULTIMEDIA',
+    //     AUDIO: 'MULTIMEDIA'
+    //   }
+    //   return flag[str]
+    // }
   } else {
     return '文件夹'
   }

@@ -310,8 +310,31 @@ export const types = {
   video: 'application/vnd.rn-realmedia-vbr;video/mp4;application/vnd.rn-realmedia;video/3gpp;video/x-m4v;video/x-ms-vob;video/x-matroska;video/x-flv;video/quicktime;video/x-msvideo;video/3gpp',
   music: 'audio/x-ms-wma;audio/x-aac;audio/x-flac;audio/x-wav;audio/mpeg',
   font: 'application/x-font-woff;application/x-font-ttf',
-  file: 'application/zip'
+  file: 'application/zip;application/pdf'
 }
+
+const imageType = types.image.split(';').reduce((obj, item) => {
+  obj[item] = 'image'
+  return obj
+}, {})
+const videoType = types.video.split(';').reduce((obj, item) => {
+  obj[item] = 'video'
+  return obj
+}, {})
+const musicType = types.music.split(';').reduce((obj, item) => {
+  obj[item] = 'music'
+  return obj
+}, {})
+const fontType = types.font.split(';').reduce((obj, item) => {
+  obj[item] = 'font'
+  return obj
+}, {})
+const fileType = types.file.split(';').reduce((obj, item) => {
+  obj[item] = 'file'
+  return obj
+}, {})
+
+export const needType = { ...imageType, ...videoType, ...musicType, ...fontType, ...fileType }
 
 // 排序
 export const sortOptions = [{

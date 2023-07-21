@@ -145,9 +145,13 @@
             个结果
           </div>
           <div class="right-content">
+            <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog"
+                       class="btn create-folder">
+              <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
+            </el-button>
             <el-dropdown trigger="click" @command="handleSort">
               <el-button type="primary" size="mini" class="btn all-btn">
-                <div class="button"><i class="el-icon-sort search-icon"/>按{{ searchForm.sort ? '下载' : '默认' }}排序
+                <div class="button"><i class="el-icon-sort search-icon"/>{{ searchForm.sort ? '下载' : '默认' }}
                 </div>
               </el-button>
               <el-dropdown-menu slot="dropdown">
@@ -155,10 +159,13 @@
                 <el-dropdown-item command="download" :disabled="searchForm.sort==='download'">下载</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
-            <el-button v-permission="assetRole" type="primary" size="mini" @click="createFolderDialog"
-                       class="btn create-folder">
-              <div class="button"><i class="el-icon-folder search-icon"/>新建文件夹</div>
-            </el-button>
+
+            <img style="cursor: pointer;" v-if="dropDownValue==='el-icon-s-grid'" @click="handleView('el-icon-picture')"
+                 title="列表视图" alt="view-icon"
+                 src="../../assets/home/table-view-icon.png"/>
+            <img style="cursor: pointer;" v-if="dropDownValue==='el-icon-picture'" @click="handleView('el-icon-s-grid')"
+                 title="卡片视图" alt="view-icon"
+                 src="../../assets/home/card-view-icon.png"/>
             <!--          <el-button v-permission="assetRole" type="primary" size="mini" @click="showUpload=true" class="btn">-->
             <!--            <div class="button"><i class="el-icon-upload search-icon"/>上传</div>-->
             <!--          </el-button>-->
@@ -210,10 +217,11 @@
         </div>
       </div>
       <div class="content">
-        <div v-show="dropDownValue==='el-icon-s-grid'" class="list-view">
+        <div class="list-view" v-loading="loading">
           <el-table
+            v-show="dropDownValue==='el-icon-s-grid'"
             ref="table"
-            v-loading="loading"
+            :row-key="getRowKey"
             height="100%"
             @cell-click="handleTableCellClick"
             @selection-change="handleSelectionChange"
@@ -228,17 +236,25 @@
             <el-table-column
               type="selection"
               align="center"
+              :reserve-selection="true"
               width="36">
             </el-table-column>
             <el-table-column width="56" align="center">
               <template slot-scope="scope">
                 <div class="first-column" @click.stop>
-                  <i v-if="scope.row.nodeType!=='dam:Asset'" class="el-icon-folder"/>
+                  <img alt="folder" v-if="scope.row.nodeType!=='dam:Asset'" src="../../assets/home/folder-table.png"/>
                   <template v-else>
                     <el-image v-if="scope.row.renditions" :src="`${baseUrl}${scope.row.renditions.list}`"
                               :preview-src-list="[`${baseUrl}${scope.row.renditions.detail}`]">
                       <div slot="error" class="image-slot">
-                        <i class="el-icon-document"></i>
+                        <img style="width: 100%;height: 100%;" alt="file" src="../../assets/home/file-table.png"
+                             v-if="fileShowType(scope.row.metadata['dc:format'])==='file'"/>
+                        <img style="width: 100%;height: 100%;" alt="music" src="../../assets/home/music-table.png"
+                             v-if="fileShowType(scope.row.metadata['dc:format'])==='music'"/>
+                        <img style="width: 100%;height: 100%;" alt="font" src="../../assets/home/font-table.png"
+                             v-if="fileShowType(scope.row.metadata['dc:format'])==='font'"/>
+                        <img style="width: 100%;height: 100%;" alt="video" src="../../assets/home/video-table.png"
+                             v-if="fileShowType(scope.row.metadata['dc:format'])==='video'"/>
                       </div>
                     </el-image>
                   </template>
@@ -312,15 +328,16 @@
             </el-table-column>
             <el-table-column label="到期状态" width="100">
               <template slot-scope="scope">
-                <span v-if="scope.row.metadata&&'prism:expirationDate' in scope.row.metadata">{{
+                <span style="background: #FDF4F4;padding: 2px 14px;color: #3D3D3D;font-weight: 400;border-radius: 14px;"
+                      v-if="scope.row.metadata&&'prism:expirationDate' in scope.row.metadata">{{
                     scope.row.metadata['prism:expirationDate'] | expiresWhetherFormat
                   }}</span>
               </template>
             </el-table-column>
           </el-table>
-        </div>
-        <div v-show="dropDownValue==='el-icon-picture'">
-          卡片视图{{ lastCrumb.id }}
+          <card-view :list-data="filterListData" @select="handleCardViewSelect" @clickAsset="handleTableCellClick"
+                     @clickFolder="handleTableCellClick"
+                     v-show="dropDownValue==='el-icon-picture'"/>
         </div>
         <div v-show="dropDownValue==='el-icon-s-data'">
           列视图{{ lastCrumb.id }}
@@ -407,13 +424,15 @@ import {
   whetherRecommendedOptions,
   colorOptions,
   compositionOptions,
-  sortOptions
+  sortOptions,
+  needType
 } from '@/utils'
 import '@/utils/filter'
 import dayjs from 'dayjs'
 import isBetween from 'dayjs/plugin/isBetween'
 import utc from 'dayjs/plugin/utc'
 import { downloadByGet } from '@/api'
+import CardView from '@/components/CardView/CardView'
 
 dayjs.extend(isBetween)
 dayjs.extend(utc)
@@ -421,6 +440,7 @@ dayjs.extend(utc)
 export default {
   name: 'ManageContent',
   components: {
+    CardView,
     search,
     drawer,
     upload,
@@ -494,6 +514,11 @@ export default {
       }
       const file = res.filter(i => i.nodeType === 'sling:Folder' || i.nodeType === 'sling:OrderedFolder')
       return [...file, ...assets]
+    },
+    fileShowType: function () {
+      return type => {
+        return needType[type]
+      }
     }
   },
   mounted () {
@@ -514,6 +539,7 @@ export default {
   },
   data () {
     return {
+      getRowKey: row => row.assetId,
       baseUrl,
       errorData: '',
       loading: false,
@@ -648,6 +674,13 @@ export default {
       command === 'el-icon-share' && this.handleShare()
       // console.log(command)
     },
+    handleView (type) {
+      this.loading = true
+      this.dropDownValue = type
+      setTimeout(() => {
+        this.loading = false
+      }, 1000)
+    },
     handleShare () {
       const [flag] = this.$refs.table.selection
       this.shareDialogData = flag
@@ -745,6 +778,9 @@ export default {
           sessionStorage.removeItem('recommend')
         }
         this.loading = false
+        this.$nextTick(() => {
+          this.$refs.table.clearSelection()
+        })
       }
     },
     createFolderDialog () {
@@ -808,6 +844,11 @@ export default {
       }
     },
     handleSelectionChange (selection) {
+      const flag = this.listViewData
+      this.listViewData = [...flag.map(i => ({
+        ...i,
+        select: selection.some(k => k.assetId === i.assetId)
+      }))]
       this.settingBtn = [...this.settingBtn.map(e => ({
         ...e,
         show: e.icon === 'el-icon-info' ? selection.length === 1 || selection.every(e => e.nodeType === 'dam:Asset') : e.icon === 'el-icon-share' ? selection.length === 1 : e.show
@@ -877,6 +918,14 @@ export default {
     handleUploadDialog (flag) {
       flag && this.refresh()
       this.showUpload = false
+    },
+    handleCardViewSelect ({
+      row,
+      val
+    }) {
+      this.$nextTick(() => {
+        this.$refs.table.toggleRowSelection(row, val)
+      })
     }
   }
 }
@@ -1303,11 +1352,23 @@ export default {
     }
 
     .content {
-      background-color: rgb(242, 242, 242);
+      //background-color: rgb(242, 242, 242);
       flex: 1;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 5px;
+      }
 
       .list-view {
         height: 100%;
+        padding-bottom: 64px;
+        box-sizing: border-box;
 
         /deep/ .el-table__header-wrapper {
           .el-checkbox {

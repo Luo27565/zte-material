@@ -171,7 +171,7 @@
           <div class="top-btn">
             <!--            <el-button type="primary" @click="handleSearch">搜索<i class="el-icon-search" style="margin-left: 8px"/>-->
             <!--            </el-button>-->
-            <el-dropdown class="btn" v-show="showBtn" @command="handleCommand">
+            <el-dropdown class="btn" v-show="multipleSelection.length" @command="handleCommand">
               <el-button class="search-operate" type="primary">
                 操作<i class="el-icon-arrow-down el-icon--right"></i>
               </el-button>
@@ -179,6 +179,10 @@
                 <el-dropdown-item v-for="item in settingBtn" :key="item.icon" :icon="item.icon" v-show="item.show"
                                   :command="item.icon">
                   {{ item.label }}
+                </el-dropdown-item>
+                <el-dropdown-item icon="el-icon-share" v-show="multipleSelection.length===1"
+                                  command="el-icon-share">
+                  分享
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
@@ -193,18 +197,17 @@
           <!--            搜索结果-->
           <!--          </div>-->
           <div class="info-message">
-            <div class="all-select" v-permission="assetRole" @click="handleAllSelect">
-              <i class="el-icon-circle-check"/>
-              全选
+            <div style="font-size: 14px;color: #666666;font-weight: 400;">共<span
+              style="color: #222222;font-weight: bold;padding: 0 4px;">{{ total }}</span>个结果
             </div>
             <!--            <div class="total">{{ viewData.length }}/{{ total }}</div>-->
-            <div>
+            <div style="display: flex;align-items: center;">
               <el-dropdown trigger="click" @command="handleSort">
                 <el-button type="primary" size="mini" class="btn all-btn">
                   <div class="button" style="display: flex;align-items: center;"><i
-                    class="el-icon-sort search-icon"/>按{{
+                    class="el-icon-sort search-icon"/>{{
                       searchForm.sort ? searchForm.sort === 'download' ? '下载' : '最新上传' : '默认'
-                    }}排序
+                    }}
                   </div>
                 </el-button>
                 <el-dropdown-menu slot="dropdown">
@@ -214,34 +217,57 @@
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
-              <i style="margin-left: 32px;" :class="[viewType,'viewType']"
-                 :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"/>
+              <!--              <i style="margin-left: 32px;" :class="[viewType,'viewType']"-->
+              <!--                 :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"/>-->
+              <img style="cursor: pointer;margin: 0 24px;" v-if="viewType==='el-icon-s-grid'"
+                   @click="handleView('el-icon-picture')"
+                   title="列表视图" alt="view-icon"
+                   src="../../assets/home/table-view-icon.png"/>
+              <img style="cursor: pointer;margin: 0 24px;" v-if="viewType==='el-icon-picture'"
+                   @click="handleView('el-icon-s-grid')"
+                   title="卡片视图" alt="view-icon"
+                   src="../../assets/home/card-view-icon.png"/>
+              <div class="all-select" v-permission="assetRole" @click="handleAllSelect">
+                <i class="el-icon-circle-check"/>
+                全选
+              </div>
             </div>
             <!--        <i :class="[viewType,'viewType']" :title="viewType === 'el-icon-s-grid' ? '列表视图' : '卡片视图'"-->
             <!--           @click="viewType = viewType === 'el-icon-s-grid' ? 'el-icon-picture' : 'el-icon-s-grid'"/>-->
           </div>
         </div>
         <div class="info-content">
-          <div class="container" :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
-            <TableView :show-select="assetRole" :table-data="viewData" @onScroll="handleSearch" @selected="handleBtn"
+          <div v-show="viewType==='el-icon-s-grid'" class="container"
+               :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
+            <TableView :show-select="assetRole" :table-data="viewData" @changeSelect="handleChangeSelect"
+                       @onScroll="handleSearch" @selected="handleBtn"
                        :total="total"
                        ref="table"></TableView>
+          </div>
+          <div v-show="viewType==='el-icon-picture'" class="container card-view-content"
+               v-infinite-scroll="handleCardViewScroll"
+               :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
+            <SearchCardView :show-check-box="assetRole" :list-data="viewData" @select="handleCardViewSelect"/>
           </div>
         </div>
         <div style="display: none" v-html="errorData"></div>
       </div>
     </div>
     <select-folder-dialog :visible.sync="showFolderSelect" @finish="setPathInput"></select-folder-dialog>
-    <el-dialog width="320px" title="删除资产" :visible.sync="dialogDeleteFolderVisible" @open="handleDeleteDialog"
-               :modal-append-to-body="false" :append-to-body="true">
-      <div style="color: #222222">{{ deleteTitle }}</div>
-      <p style="max-height: 180px;overflow: auto;color: #222222" v-html="deleteContent"></p>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogDeleteFolderVisible = false">取 消</el-button>
-        <el-button type="danger" :loading="deleteLoading"
-                   @click="deleteAsset">删 除</el-button>
-      </span>
-    </el-dialog>
+    <!--    <el-dialog width="320px" title="删除资产" :visible.sync="dialogDeleteFolderVisible" @open="handleDeleteDialog"-->
+    <!--               :modal-append-to-body="false" :append-to-body="true">-->
+    <!--      <div style="color: #222222">{{ deleteTitle }}</div>-->
+    <!--      <p style="max-height: 180px;overflow: auto;color: #222222" v-html="deleteContent"></p>-->
+    <!--      <span slot="footer" class="dialog-footer">-->
+    <!--        <el-button @click="dialogDeleteFolderVisible = false">取 消</el-button>-->
+    <!--        <el-button type="danger" :loading="deleteLoading"-->
+    <!--                   @click="deleteAsset">删 除</el-button>-->
+    <!--      </span>-->
+    <!--    </el-dialog>-->
+
+    <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="multipleSelection" @finish="handleDeleteDialog"/>
+
+    <ShareDialog :visible.sync="showShareDialog" :share-data="shareDialogData"/>
   </el-drawer>
 </template>
 
@@ -262,15 +288,23 @@ import {
 } from '@/utils'
 import SelectFolderDialog from '@/components/SelectFolderDialog/SelectFolderDialog'
 import TableView from '@/components/TableView/TableView'
-import { command, searchAsset, searchPopularTag } from '@/api/api'
+import DeleteDialog from '@/components/DeleteDialog/DeleteDialog'
+import { command, downloadZip, searchAsset, searchPopularTag } from '@/api/api'
 import zteStore from '@/store'
 import { mapState } from 'pinia'
+import SearchCardView from '@/components/SearchCardView/SearchCardView'
+import ShareDialog from '@/components/ShareDialog/ShareDialog'
+import dayjs from 'dayjs'
+import { downloadByGet } from '@/api'
 
 export default {
   name: 'SearchDrawer',
   components: {
+    SearchCardView,
     SelectFolderDialog,
-    TableView
+    TableView,
+    ShareDialog,
+    DeleteDialog
   },
   props: {
     drawer: {
@@ -317,6 +351,10 @@ export default {
       }, {
         icon: 'el-icon-info',
         label: '属性',
+        show: true
+      }, {
+        icon: 'el-icon-download',
+        label: '下载',
         show: true
       }, {
         icon: 'el-icon-edit-outline',
@@ -373,7 +411,10 @@ export default {
       deleteContent: '',
       deleteLoading: false,
       tagsData: {},
-      errorData: ''
+      errorData: '',
+      multipleSelection: [],
+      showShareDialog: false,
+      shareDialogData: null
     }
   },
   methods: {
@@ -416,7 +457,6 @@ export default {
       (first && !!this.$refs.table) && (this.$refs.table.disabled = false)
       this.loading = true
       const searchType = this.searchForm.fileType.map(e => types[e]).join(';')
-      console.log(this.searchForm.portrait)
       const portrait = this.searchForm.portrait.length ? this.searchForm.portrait[0] : ''
       const source = this.searchForm.source.length ? this.searchForm.source[0] : ''
       const authorizationScope = this.searchForm.scopeAuthorization.length ? this.searchForm.scopeAuthorization[0] : ''
@@ -466,6 +506,9 @@ export default {
         })
       } finally {
         this.loading = false
+        this.$nextTick(() => {
+          this.$refs.table.$refs.table.clearSelection()
+        })
       }
     },
     closeSearch () {
@@ -547,6 +590,8 @@ export default {
       // el-icon-info
       command === 'el-icon-delete' && (this.dialogDeleteFolderVisible = true)
       command === 'el-icon-info' && this.handleJump()
+      command === 'el-icon-download' && this.handleDownload()
+      command === 'el-icon-share' && this.handleShare()
     },
     handleJump () {
       const { path } = this.$route
@@ -563,9 +608,11 @@ export default {
       })
     },
     handleDeleteDialog () {
-      const length = this.$refs.table.$refs.table.selection.length
-      this.deleteTitle = length === 1 ? '您即将删除以下资产:' : `您即将删除以下 ${length} 个资产:`
-      this.deleteContent = this.$refs.table.$refs.table.selection.map((e, index) => index + 1 === length ? `${e.properties['jcr:title'] || e.name}` : `${e.properties['jcr:title'] || e.name}<br>`).join('')
+      // const length = this.$refs.table.$refs.table.selection.length
+      // this.deleteTitle = length === 1 ? '您即将删除以下资产:' : `您即将删除以下 ${length} 个资产:`
+      // this.deleteContent = this.$refs.table.$refs.table.selection.map((e, index) => index + 1 === length ? `${e.properties['jcr:title'] || e.name}` : `${e.properties['jcr:title'] || e.name}<br>`).join('')
+      this.dialogDeleteFolderVisible = false
+      this.handleSearch()
     },
     async deleteAsset () {
       this.deleteLoading = true
@@ -646,6 +693,66 @@ export default {
     handleSort (command) {
       this.$set(this.searchForm, 'sort', command === 'download' ? command : command === 'upload' ? 'upload' : '')
       this.handleSearch()
+    },
+    handleView (type) {
+      // this.loading = true
+      this.viewType = type
+      // setTimeout(() => {
+      //   this.loading = false
+      // }, 1000)
+    },
+    handleCardViewScroll () {
+      if (this.viewData.length >= this.total) return
+      this.handleSearch(false)
+    },
+    handleChangeSelect (arr) {
+      this.multipleSelection = arr
+      const flag = this.viewData
+      this.viewData = [...flag.map(i => ({
+        ...i,
+        select: arr.some(k => k.assetId === i.assetId)
+      }))]
+    },
+    handleCardViewSelect ({
+      row,
+      val
+    }) {
+      this.$nextTick(() => {
+        this.$refs.table.$refs.table.toggleRowSelection(row, val)
+      })
+    },
+    async handleDownload () {
+      if (this.multipleSelection.some(i => i.metadata && 'prism:expirationDate' in i.metadata && dayjs().isAfter(dayjs(i.metadata['prism:expirationDate'])))) {
+        this.$message.error('此素材已到期，请联系管理员')
+        return
+      }
+      try {
+        this.loading = true
+        const length = this.multipleSelection.length
+        const [flag] = this.multipleSelection
+        if (length === 1) {
+          const name = flag.metadata && ('dc:title' in flag.metadata) ? flag.metadata['dc:title'] : flag.name
+          await downloadByGet(`${flag.path}`, name)
+        } else {
+          const str = this.multipleSelection.map(i => `path=${i.path}`).join('&')
+          const res = await downloadZip(`${flag.path}.assetdownload.zip/zte.zip?${str}&_charset_=utf-8&downloadAssets=true&licenseCheck=false&flatStructure=true&downloadRenditions=false&downloadSubassets=false`)
+          const url = window.URL.createObjectURL(res)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = '文件下载.zip'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
+        }
+      } finally {
+        this.loading = false
+      }
+    },
+    handleShare () {
+      const [flag] = this.multipleSelection
+      this.shareDialogData = flag
+      this.showShareDialog = true
     }
   },
   mounted () {
@@ -1007,6 +1114,7 @@ export default {
   .info-message {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
 
     .all-select {
@@ -1165,6 +1273,21 @@ export default {
 
   .container {
     transition: width 0.5s ease 0s;
+  }
+
+  .card-view-content::-webkit-scrollbar {
+    width: 8px;
+    background-color: rgb(235, 235, 235);
+  }
+
+  .card-view-content::-webkit-scrollbar-thumb {
+    background: #ccc; // 滑块颜色
+    border-radius: 5px; // 滑块圆角
+  }
+
+  .card-view-content {
+    margin-bottom: 108px;
+    overflow-y: auto;
   }
 
   /deep/ .el-table {

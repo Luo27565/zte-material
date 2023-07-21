@@ -2,6 +2,7 @@
   <el-table
     class="table-view"
     ref="table"
+    :row-key="getRowKey"
     :row-style="{height:'48px'}"
     height="100%"
     @selection-change="handleSelectionChange"
@@ -11,21 +12,35 @@
     :infinite-scroll-distance='1'
     :infinite-scroll-delay="300"
     :data="tableData">
+    <template slot="empty">
+      <div style="display: flex;flex-direction: column;align-items: center;">
+        <img alt="empty" src="../../assets/home/empty.png"/>
+        <span style="color: #3D3D3D;font-weight: 400;font-size: 14px;margin-top: -24px;">暂无文件</span>
+      </div>
+    </template>
     <el-table-column
       type="selection"
       align="center"
       v-if="showSelect"
+      :reserve-selection="true"
       width="36">
     </el-table-column>
     <el-table-column width="56" align="center">
       <template slot-scope="scope">
         <div class="first-column" @click.stop>
-          <i v-if="scope.row.nodeType!=='dam:Asset'" class="el-icon-folder"/>
+          <img alt="folder" v-if="scope.row.nodeType!=='dam:Asset'" src="../../assets/home/folder-table.png"/>
           <template v-else>
             <el-image v-if="scope.row.renditions" :src="`${baseUrl}${scope.row.renditions.list}`"
                       :preview-src-list="[`${baseUrl}${scope.row.renditions.detail}`]">
               <div slot="error" class="image-slot">
-                <i class="el-icon-document"></i>
+                <img style="width: 100%;height: 100%;" alt="file" src="../../assets/home/file-table.png"
+                     v-if="fileShowType(scope.row.metadata['dc:format'])==='file'"/>
+                <img style="width: 100%;height: 100%;" alt="music" src="../../assets/home/music-table.png"
+                     v-if="fileShowType(scope.row.metadata['dc:format'])==='music'"/>
+                <img style="width: 100%;height: 100%;" alt="font" src="../../assets/home/font-table.png"
+                     v-if="fileShowType(scope.row.metadata['dc:format'])==='font'"/>
+                <img style="width: 100%;height: 100%;" alt="video" src="../../assets/home/video-table.png"
+                     v-if="fileShowType(scope.row.metadata['dc:format'])==='video'"/>
               </div>
             </el-image>
           </template>
@@ -114,7 +129,7 @@
 </template>
 
 <script>
-import { baseUrl } from '@/utils'
+import { baseUrl, needType } from '@/utils'
 import ElTableInfiniteScroll from 'el-table-infinite-scroll'
 import detailDrawer from '@/components/DetailDrawer/DetailDrawer'
 
@@ -125,6 +140,13 @@ export default {
   },
   components: {
     detailDrawer
+  },
+  computed: {
+    fileShowType: function () {
+      return type => {
+        return needType[type]
+      }
+    }
   },
   props: {
     showSelect: {
@@ -142,6 +164,7 @@ export default {
   },
   data () {
     return {
+      getRowKey: row => row.assetId,
       baseUrl,
       disabled: false,
       detailDrawer: false,
@@ -159,6 +182,7 @@ export default {
     },
     handleSelectionChange (selection) {
       this.$emit('selected', !!selection.length)
+      this.$emit('changeSelect', selection)
     },
     jump (row) {
       this.detailData = row
