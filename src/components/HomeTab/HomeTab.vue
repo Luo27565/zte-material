@@ -40,7 +40,7 @@
                       `${video.metadata && 'dc:title' in video.metadata ? video.metadata['dc:title'] : video.name}`
                     }}
                   </div>
-                  <div>{{ video.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ video.duration }}</div>
                 </div>
               </div>
             </div>
@@ -63,7 +63,7 @@
                       `${music.metadata && 'dc:title' in music.metadata ? music.metadata['dc:title'] : music.name}`
                     }}
                   </div>
-                  <div>{{ music.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ music.duration }}</div>
                 </div>
                 <div v-else class="video-title">
                   {{
@@ -120,7 +120,7 @@
                       `${video.metadata && 'dc:title' in video.metadata ? video.metadata['dc:title'] : video.name}`
                     }}
                   </div>
-                  <div>{{ video.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ video.duration }}</div>
                 </div>
               </div>
             </div>
@@ -143,7 +143,7 @@
                       `${music.metadata && 'dc:title' in music.metadata ? music.metadata['dc:title'] : music.name}`
                     }}
                   </div>
-                  <div>{{ music.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ music.duration }}</div>
                 </div>
                 <div v-else class="video-title">
                   {{
@@ -200,7 +200,7 @@
                       `${video.metadata && 'dc:title' in video.metadata ? video.metadata['dc:title'] : video.name}`
                     }}
                   </div>
-                  <div>{{ video.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ video.duration }}</div>
                 </div>
               </div>
             </div>
@@ -223,7 +223,7 @@
                       `${music.metadata && 'dc:title' in music.metadata ? music.metadata['dc:title'] : music.name}`
                     }}
                   </div>
-                  <div>{{ music.duration }}</div>
+                  <div style="flex-shrink: 0;">{{ music.duration }}</div>
                 </div>
                 <div v-else class="video-title">
                   {{
