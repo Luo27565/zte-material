@@ -428,13 +428,14 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-wrap: wrap;
 
         .item {
           display: inline-block;
           color: #FFFFFF;
           font-size: 14px;
           cursor: pointer;
-          margin: 0 4px;
+          margin: 0 4px 12px;
           padding: 0 10px;
           line-height: 24px;
           background: rgba(255, 255, 255, 0.5);
