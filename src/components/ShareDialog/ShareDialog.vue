@@ -135,8 +135,28 @@ export default {
     },
     async handleCopy () {
       if (this.url) {
-        await navigator.clipboard.writeText(this.url)
-        this.$message.success('复制成功')
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(this.url)
+          this.$message.success('复制成功')
+        } else {
+          const textArea = document.createElement('textarea')
+          textArea.value = this.url
+          // 使text area不在viewport，同时设置不可见
+          textArea.style.position = 'absolute'
+          textArea.style.opacity = 0
+          textArea.style.left = '-999999px'
+          textArea.style.top = '-999999px'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          // eslint-disable-next-line promise/param-names
+          await new Promise((res, rej) => {
+            // eslint-disable-next-line prefer-promise-reject-errors
+            document.execCommand('copy') ? res() : rej()
+            textArea.remove()
+          })
+          this.$message.success('复制成功')
+        }
       }
     },
     handleError (type, event) {
