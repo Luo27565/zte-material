@@ -3,6 +3,9 @@
     <div class="content">
       <search class="home-top-search" ref="search"/>
       <div class="popular-tags-container">
+        <div style="order: 5;color: #008ED3;" v-if="popularTags.length">
+          热门标签：
+        </div>
         <div class="popular-tags" v-if="popularTags.length">
         <span class="item" v-for="item in popularTags" :key="item.key" @click="handleTags(item.label)">
           {{ item.label }}
@@ -427,7 +430,7 @@ export default {
         flex: 1;
         display: flex;
         align-items: center;
-        justify-content: center;
+        //justify-content: center;
         flex-wrap: wrap;
 
         .item {
