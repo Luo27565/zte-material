@@ -42,6 +42,7 @@
           v-model="sharingExpiredTime"
           :picker-options="pickerOptions"
           type="datetime"
+          :disabled="!!url"
           placeholder="选择开放截至时间">
         </el-date-picker>
         <div :class="['btn',url?'disabled-btn':'']" @click="handleBuild">生成链接</div>
@@ -115,6 +116,7 @@ export default {
       if (this.sharingExpiredTime && new Date().getTime() > new Date(this.sharingExpiredTime).getTime()) {
         this.$message.error('开放截至时间不能早于当前时间')
       } else {
+        if (this.url) return
         const formData = new FormData()
         formData.append('filePath', this.shareData.path)
         formData.append('sharingExpiredTime', this.sharingExpiredTime || '2999-01-01 00:00:00')
