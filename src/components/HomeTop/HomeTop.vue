@@ -190,7 +190,7 @@ export default {
             font-size: 16px;
             color: #008ED3;
             line-height: 50px;
-            padding-left: 30px;
+            //padding-left: 30px;
           }
 
           .el-input__suffix {
@@ -221,7 +221,7 @@ export default {
           }
 
           &:before {
-            content: 'ALL';
+            content: '';
             font-size: 10px;
             line-height: 20px;
             color: #008ED3;
@@ -280,7 +280,7 @@ export default {
               }
 
               &.select-all:before {
-                content: 'ALL';
+                content: '';
                 font-size: 10px;
                 margin-top: 1px;
               }
