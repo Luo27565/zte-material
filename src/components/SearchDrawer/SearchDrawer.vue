@@ -240,14 +240,15 @@
           <div v-show="viewType==='el-icon-s-grid'" class="container"
                :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
             <TableView :show-select="assetRole" :table-data="viewData" @changeSelect="handleChangeSelect"
-                       @onScroll="handleSearch" @selected="handleBtn"
+                       @onScroll="handleSearch" @selected="handleBtn" @rowClick="handleDetail"
                        :total="total"
                        ref="table"></TableView>
           </div>
           <div v-show="viewType==='el-icon-picture'" class="container card-view-content"
                v-infinite-scroll="handleCardViewScroll"
                :style="{width:showSearch?'calc(100% - 15.625rem)':'100%'}">
-            <SearchCardView :show-check-box="assetRole" :list-data="viewData" @select="handleCardViewSelect"/>
+            <SearchCardView :show-check-box="assetRole" :list-data="viewData" @select="handleCardViewSelect"
+                            @clickAsset="handleDetail"/>
           </div>
         </div>
         <div style="display: none" v-html="errorData"></div>
@@ -266,7 +267,8 @@
     <!--    </el-dialog>-->
 
     <DeleteDialog :visible.sync="dialogDeleteFolderVisible" :list="multipleSelection" @finish="handleDeleteDialog"/>
-
+    <detail-drawer :drawer.sync="showDetailDrawer" :all-detail-data="detailArr" :detail="detailData"
+    />
     <ShareDialog :visible.sync="showShareDialog" :share-data="shareDialogData"/>
   </el-drawer>
 </template>
@@ -287,6 +289,7 @@ import {
   types
 } from '@/utils'
 import SelectFolderDialog from '@/components/SelectFolderDialog/SelectFolderDialog'
+import detailDrawer from '@/components/DetailDrawer/DetailDrawer'
 import TableView from '@/components/TableView/TableView'
 import DeleteDialog from '@/components/DeleteDialog/DeleteDialog'
 import { command, downloadZip, searchAsset, searchPopularTag } from '@/api/api'
@@ -304,7 +307,8 @@ export default {
     SelectFolderDialog,
     TableView,
     ShareDialog,
-    DeleteDialog
+    DeleteDialog,
+    detailDrawer
   },
   props: {
     drawer: {
@@ -338,6 +342,9 @@ export default {
   data () {
     return {
       showBtn: false,
+      detailArr: [],
+      detailData: {},
+      showDetailDrawer: false,
       settingBtn: [{
         icon: 'el-icon-delete',
         label: '删除',
@@ -712,6 +719,11 @@ export default {
         ...i,
         select: arr.some(k => k.assetId === i.assetId)
       }))]
+    },
+    handleDetail (row) {
+      this.detailArr = [...this.viewData.filter(e => e.nodeType === 'dam:Asset')]
+      this.detailData = row
+      this.showDetailDrawer = true
     },
     handleCardViewSelect ({
       row,
